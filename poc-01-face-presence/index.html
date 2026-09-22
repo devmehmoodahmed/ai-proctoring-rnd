@@ -15,6 +15,15 @@
     production app. See <a href="README.md">README.md</a> for how to run the test
     matrix and where results get recorded.
   </p>
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This watches your webcam and flags when your face isn't properly visible: you leave the camera view, sit too far away, cover your face, or a second person appears.</li>
+      <li>Click <strong>Start camera</strong>, then try: stepping out of view, moving very close/far, briefly covering your face, holding still out of frame for a few seconds, and having someone else step into frame.</li>
+      <li>Watch the status message above the video and the event log below — each row shows what was detected and for how long.</li>
+      <li>A very quick, split-second change (e.g. a fast hand wave) should <em>not</em> log an event — only sustained issues should.</li>
+    </ul>
+  </details>
 </header>
 
 <main>

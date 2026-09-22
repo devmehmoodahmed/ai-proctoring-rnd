@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Proctoring R&D</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2e38;
+    --text: #e6e8ec;
+    --muted: #8a8f9b;
+    --green: #2ecc71;
+    --orange: #f39c12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 24px; }
+  .subtitle a { color: var(--text); }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  li {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  li a { color: var(--text); font-size: 15px; font-weight: 600; text-decoration: none; }
+  li a:hover { text-decoration: underline; }
+  .status { display: inline-block; margin-left: 10px; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+  .status.done { color: var(--green); border-color: var(--green); }
+  .status.pending { color: var(--orange); border-color: var(--orange); }
+  .desc { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
+  .footer a { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>AI Proctoring R&D</h1>
+  <p class="subtitle">
+    Proof-of-concept track for AI-assisted exam proctoring. Each POC below is
+    standalone and privacy-first — all inference runs on-device, nothing is uploaded.
+    See <a href="R&D.md">R&amp;D.md</a> for the full architecture/research document.
+  </p>
+  <ul>
+    <li>
+      <a href="poc-01-face-presence/">POC #1 — Face Presence / Out-of-Frame / Multiple Faces</a>
+      <span class="status done">implemented</span>
+      <p class="desc">MediaPipe Face Detector (BlazeFace). Detects whether a candidate's face is present, out of frame, too far, or if multiple faces appear.</p>
+    </li>
+    <li>
+      <a href="poc-02-gaze-headpose/">POC #2 — Gaze / Head-Pose ("Looking Away")</a>
+      <span class="status pending">awaiting test pass</span>
+      <p class="desc">MediaPipe Face Landmarker. Detects sustained head-turn away from the screen via yaw/pitch, with a calibration step.</p>
+    </li>
+  </ul>
+  <p class="footer">Run each POC from its own folder — see that folder's README for instructions.</p>
+</main>
+</body>
+</html>

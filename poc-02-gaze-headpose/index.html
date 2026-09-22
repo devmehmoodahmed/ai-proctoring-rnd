@@ -15,6 +15,16 @@
     wired to any production app. See <a href="README.md">README.md</a> for how to run
     the test matrix and where results get recorded.
   </p>
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This watches your webcam and flags when you turn your head away from the screen — for example checking a second monitor, looking down at notes, or looking away for a while.</li>
+      <li>Click <strong>Start camera</strong>, then look straight at your screen and click <strong>Calibrate</strong> — this tells the app what "looking at the screen" looks like for you, so it works no matter where your webcam is positioned.</li>
+      <li>Then try: turning your head left/right, looking down/up, glancing away briefly, and staying turned away for a few seconds.</li>
+      <li>Watch the status message above the video and the event log below — each row shows what was detected and for how long.</li>
+      <li>A quick, brief glance away should <em>not</em> log an event — only sustained looking-away should.</li>
+    </ul>
+  </details>
 </header>
 
 <main>
