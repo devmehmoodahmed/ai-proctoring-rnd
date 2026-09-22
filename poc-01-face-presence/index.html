@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #1 — Face Presence Detection</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #1 — Face Presence / Out-of-Frame / Multi-Face Detection</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. All inference runs locally in this browser tab via
+    MediaPipe (WASM) — no video frame is ever sent to a server. Not wired to any
+    production app. See <a href="README.md">README.md</a> for how to run the test
+    matrix and where results get recorded.
+  </p>
+</header>
+
+<main>
+  <section class="video-panel">
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">Start camera</button>
+      <button id="stopBtn" disabled>Stop camera</button>
+      <span id="liveStatus" class="live-status idle">Camera not started</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">FPS</span><span id="fpsVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Inference latency (avg)</span><span id="latencyVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Faces detected</span><span id="faceCountVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Confidence</span><span id="confidenceVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="config-panel">
+    <h2>Thresholds</h2>
+    <p class="hint">Tune these while testing — they directly implement the "avoid excessive false positives" / grace-period behavior from the brief.</p>
+    <label>
+      Min detection confidence
+      <input type="range" id="cfgMinConfidence" min="0.1" max="0.9" step="0.05" value="0.5" />
+      <span id="cfgMinConfidenceVal">0.50</span>
+    </label>
+    <label>
+      Persist-to-confirm (ms)
+      <input type="number" id="cfgRaiseMs" value="1500" step="100" min="0" />
+    </label>
+    <label>
+      Persist-to-clear (ms)
+      <input type="number" id="cfgClearMs" value="800" step="100" min="0" />
+    </label>
+    <label>
+      Edge margin (%)
+      <input type="number" id="cfgEdgeMargin" value="8" step="1" min="0" max="40" />
+    </label>
+    <label>
+      "Too far" area ratio (%)
+      <input type="number" id="cfgTooFar" value="3" step="0.5" min="0" max="20" />
+    </label>
+  </section>
+
+  <section class="log-panel">
+    <div class="log-header">
+      <h2>Event log</h2>
+      <div class="log-actions">
+        <button id="exportBtn">Export JSON</button>
+        <button id="clearLogBtn">Clear log</button>
+      </div>
+    </div>
+    <p class="hint">Persisted to this browser's localStorage only — nothing is uploaded anywhere.</p>
+    <table id="eventTable">
+      <thead>
+        <tr><th>Time</th><th>Type</th><th>Confidence</th><th>Status</th><th>Duration</th></tr>
+      </thead>
+      <tbody id="eventTableBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
