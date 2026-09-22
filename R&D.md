@@ -1,8 +1,9 @@
 # AI Proctoring R&D
 
-Status: **POC #1 implemented; empirical validation (Section 18) still pending human
-testing.** POC #2 (gaze/head-pose) scoped and proposed — see Section 22 — awaiting
-approval to implement.
+Status: **POC #1 and POC #2 both implemented.** POC #1 has been manually tested by the
+team; POC #2 awaiting its manual test pass. Neither POC's test-matrix results have
+been recorded in this document yet (Section 18 and the POC #2 README are still
+blank) — do that before treating either POC as fully validated. POC #3+ not started.
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -477,7 +478,7 @@ Decision Log for status.
 | # | Goal | Status |
 |---|---|---|
 | 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18 |
-| 2 | Gaze / head pose | Scoped — see Section 22; awaiting approval to implement |
+| 2 | Gaze / head pose | **Implemented** — see Section 22; results pending manual test pass |
 | 3 | Phone/object detection | Not started |
 | 4 | Audio/speaking detection | Not started |
 | 5 | Screen capture | Not started |
@@ -556,17 +557,24 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. Human testing of POC #1 against the test matrix in its README; fill in Section 18
-   with real results. This still has not been done — Section 18 is empty. It matters
-   for POC #2 too, since POC #2 reuses POC #1's capture pipeline and inherits its
-   hardware/FPS assumptions.
-2. Resolve Open Questions #1 and #2 — they change the shape of POC #5/#6.
-3. POC #2 (gaze/head pose) has been scoped — see Section 22. Awaiting explicit
-   approval before implementing it, per the working rule governing this R&D track.
+1. Record POC #1's manual test-matrix results into Section 18 (and POC #2's into
+   Section 22's Results subsection) — both are still blank. Testing has happened for
+   POC #1 per the team, but the written results aren't captured in this document yet,
+   which matters for anyone reviewing this doc later without having been in the room.
+2. Run POC #2's manual test matrix (see `poc-02-gaze-headpose/README.md`) — not yet
+   done. Pay particular attention to the false-positive-prone scenarios (second
+   monitor, notes on desk) and the pose-axis sign/direction sanity check.
+3. Resolve Open Questions #1 and #2 — they change the shape of POC #5/#6.
+4. Await explicit approval before starting POC #3, per the working rule governing this
+   R&D track.
 
-## 22. POC #2 Proposal — Gaze / Head-Pose Detection
+## 22. POC #2 — Gaze / Head-Pose Detection
 
-**Status: proposed, not implemented. Awaiting approval.**
+**Status: implemented. Awaiting manual test-matrix results.**
+
+**Location:** [poc-02-gaze-headpose/](poc-02-gaze-headpose/) — same standalone,
+unwired pattern as POC #1 (plain HTML/CSS/JS, MediaPipe from CDN, no build step). Run
+instructions in that folder's README.
 
 **Question:** Using the same on-device MediaPipe pipeline as POC #1, can we reliably
 detect sustained "looking away from screen" via head pose (yaw/pitch), at real-time
@@ -636,7 +644,7 @@ localStorage pattern from POC #1's `app.js`.
   not.
 - Calibration measurably reduces false positives vs. a fixed absolute-zero baseline.
 
-**Minimal implementation scope:** A new `rnd/poc-02-gaze-headpose/` folder, forked
+**Minimal implementation scope:** A new `poc-02-gaze-headpose/` folder, forked
 from POC #1's UI/state-machine/event-log pattern (POC #1 itself is not modified).
 Swap the detector to Face Landmarker, add a live yaw/pitch/roll readout and a
 calibration button, and classify only `FOCUSED` / `LOOKING_AWAY` — no fusion with
@@ -647,6 +655,23 @@ posture as POC #1: all inference local, no upload, localStorage-only event log.
 straight ahead / second-monitor left / second-monitor right / looking down at notes /
 looking up / extreme yaw / glasses on and off / hijab or head covering / poor
 lighting / low-end webcam / calibrated vs. uncalibrated / extended-run drift.
+
+**Implementation notes (what actually got built):**
+- Head pose is derived from MediaPipe's `facialTransformationMatrixes[0]` (built-in,
+  not manual solvePnP), decomposed to yaw/pitch/roll via the standard
+  `R = Rz·Ry·Rx` formula. Sign/axis correctness is a manual-testing item (see the pose
+  axis visualization row in the POC's test matrix), not assumed correct by
+  construction.
+- Calibration is a single-click snapshot baseline, not an averaged capture — flagged
+  as a known limitation in the POC's README, worth watching for noise during testing.
+- No-face frames are treated as "gaze unavailable" (state machine resets, no event),
+  deliberately not duplicating POC #1's `FACE_MISSING` job.
+
+### POC #2 Results
+
+*(Pending — same as POC #1's Section 18, this needs a human to actually run the test
+matrix in [poc-02-gaze-headpose/README.md](poc-02-gaze-headpose/README.md) in front of
+a webcam. Drop the synthesized results here once that's done.)*
 
 ---
 
@@ -659,7 +684,7 @@ lighting / low-end webcam / calibrated vs. uncalibrated / extended-run drift.
 | 2026-09-21 | Automatic exam pause on phone detection | Option A (alert only), Option B (auto-pause), Option C (high-confidence temp auto-pause) | Option A for now | Detection accuracy unvalidated; auto-pause risk (race conditions, black-box exam engine) outweighs benefit until POC #3 produces real numbers | Approved for POC phase |
 | 2026-09-21 | Where should the proctoring backend/dashboard live | VerifyID-Portal, qababoardweb, new standalone service | VerifyID-Portal (proposed) | Reuses existing proctor auth, Pundit policies, and human-review pattern; qababoardweb's ActionCable pattern is worth imitating, not necessarily extending directly | Proposed, not approved |
 | 2026-09-21 | Model choice for POC #1 | MediaPipe Face Detector, MediaPipe Face Landmarker, TF.js face-landmarks-detection | MediaPipe Face Detector (BlazeFace short-range) | Lightest model that satisfies POC #1's scope (presence/position/count only); better signal on real CPU/latency headroom | Approved for POC #1 |
-| 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Proposed, awaiting approval to implement |
+| 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Approved — implemented, awaiting manual test results |
 
 ## Experiment Log
 

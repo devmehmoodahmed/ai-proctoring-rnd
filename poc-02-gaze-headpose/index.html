@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #2 — Gaze / Head-Pose Detection</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #2 — Gaze / Head-Pose ("Looking Away") Detection</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. All inference runs locally in this browser tab via
+    MediaPipe Face Landmarker (WASM) — no video frame is ever sent to a server. Not
+    wired to any production app. See <a href="README.md">README.md</a> for how to run
+    the test matrix and where results get recorded.
+  </p>
+</header>
+
+<main>
+  <section class="video-panel">
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">Start camera</button>
+      <button id="stopBtn" disabled>Stop camera</button>
+      <button id="calibrateBtn" disabled>Calibrate (look at screen, click)</button>
+      <button id="resetCalibrationBtn" disabled>Reset calibration</button>
+      <span id="liveStatus" class="live-status idle">Camera not started</span>
+    </div>
+
+    <p class="hint" id="calibrationHint">Calibration: not calibrated — yaw/pitch shown are raw, relative to the camera, not your screen.</p>
+
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">FPS</span><span id="fpsVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Inference latency (avg)</span><span id="latencyVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Yaw (calibrated)</span><span id="yawVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Pitch (calibrated)</span><span id="pitchVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Roll</span><span id="rollVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="config-panel">
+    <h2>Thresholds</h2>
+    <p class="hint">Tune these while testing — same grace-period/persistence idea as POC #1, applied to sustained head turns instead of leaving the frame.</p>
+    <label>
+      Yaw threshold (°)
+      <input type="number" id="cfgYawThreshold" value="20" step="1" min="1" max="60" />
+    </label>
+    <label>
+      Pitch threshold (°)
+      <input type="number" id="cfgPitchThreshold" value="15" step="1" min="1" max="60" />
+    </label>
+    <label>
+      Persist-to-confirm (ms)
+      <input type="number" id="cfgRaiseMs" value="1200" step="100" min="0" />
+    </label>
+    <label>
+      Persist-to-clear (ms)
+      <input type="number" id="cfgClearMs" value="600" step="100" min="0" />
+    </label>
+  </section>
+
+  <section class="log-panel">
+    <div class="log-header">
+      <h2>Event log</h2>
+      <div class="log-actions">
+        <button id="exportBtn">Export JSON</button>
+        <button id="clearLogBtn">Clear log</button>
+      </div>
+    </div>
+    <p class="hint">Persisted to this browser's localStorage only — nothing is uploaded anywhere.</p>
+    <table id="eventTable">
+      <thead>
+        <tr><th>Time</th><th>Type</th><th>Detail</th><th>Status</th><th>Duration</th></tr>
+      </thead>
+      <tbody id="eventTableBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
