@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #3 — Phone / Object Detection</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #3 — Phone / Object Detection</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. All inference runs locally in this browser tab via
+    MediaPipe Object Detector (WASM) — no video frame is ever sent to a server. Not
+    wired to any production app. See <a href="README.md">README.md</a> for how to run
+    the test matrix and where results get recorded.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This watches your webcam and flags when it sees a phone.</li>
+      <li>Click <strong>Start camera</strong>, then try: holding up a phone, placing it on the desk in view, holding it near your face, and holding it at an angle.</li>
+      <li>Also try "decoy" objects it might confuse for a phone: a calculator, a TV remote, a wallet, a water bottle, or just your empty hand — this is the main thing we need to learn from testing.</li>
+      <li>Watch the status message above the video and the event log below — each row shows what was detected and for how long.</li>
+      <li>Every object the camera recognizes is boxed and labeled on screen (not just phones) — useful for seeing what a decoy object gets mistaken for.</li>
+      <li>A very quick, split-second appearance should <em>not</em> log an event — only sustained phone visibility should.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="video-panel">
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">Start camera</button>
+      <button id="stopBtn" disabled>Stop camera</button>
+      <span id="liveStatus" class="live-status idle">Camera not started</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">FPS</span><span id="fpsVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Inference latency (avg)</span><span id="latencyVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Phone confidence</span><span id="confidenceVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Objects seen (any class)</span><span id="objectCountVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="config-panel">
+    <h2>Thresholds</h2>
+    <p class="hint">Tune these while testing — same grace-period idea as POC #1/#2, applied to sustained phone visibility.</p>
+    <label>
+      Min detection confidence
+      <input type="range" id="cfgMinConfidence" min="0.1" max="0.9" step="0.05" value="0.4" />
+      <span id="cfgMinConfidenceVal">0.40</span>
+    </label>
+    <label>
+      Persist-to-confirm (ms)
+      <input type="number" id="cfgRaiseMs" value="1000" step="100" min="0" />
+    </label>
+    <label>
+      Persist-to-clear (ms)
+      <input type="number" id="cfgClearMs" value="600" step="100" min="0" />
+    </label>
+  </section>
+
+  <section class="log-panel">
+    <div class="log-header">
+      <h2>Event log</h2>
+      <div class="log-actions">
+        <button id="exportBtn">Export JSON</button>
+        <button id="clearLogBtn">Clear log</button>
+      </div>
+    </div>
+    <p class="hint">Persisted to this browser's localStorage only — nothing is uploaded anywhere.</p>
+    <table id="eventTable">
+      <thead>
+        <tr><th>Time</th><th>Type</th><th>Confidence</th><th>Status</th><th>Duration</th></tr>
+      </thead>
+      <tbody id="eventTableBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 # AI Proctoring R&D
 
-Status: **POC #1 and POC #2 both implemented.** POC #1 has been manually tested by the
-team; POC #2 awaiting its manual test pass. Neither POC's test-matrix results have
-been recorded in this document yet (Section 18 and the POC #2 README are still
-blank) — do that before treating either POC as fully validated. POC #3+ not started.
+Status: **POC #1, #2, and #3 all implemented.** POC #1 and POC #2 have been manually
+tested by the team; POC #3 awaiting its manual test pass. None of the three POCs'
+test-matrix results have been recorded in this document yet (Section 18, and the
+Results subsections under Section 22/23, are still blank) — do that before treating
+any of them as fully validated. POC #4+ not started.
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -479,7 +480,7 @@ Decision Log for status.
 |---|---|---|
 | 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18 |
 | 2 | Gaze / head pose | **Implemented** — see Section 22; results pending manual test pass |
-| 3 | Phone/object detection | Not started |
+| 3 | Phone/object detection | **Implemented** — see Section 23; results pending manual test pass |
 | 4 | Audio/speaking detection | Not started |
 | 5 | Screen capture | Not started |
 | 6 | Real-time events → proctor dashboard | Not started |
@@ -557,15 +558,15 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. Record POC #1's manual test-matrix results into Section 18 (and POC #2's into
-   Section 22's Results subsection) — both are still blank. Testing has happened for
-   POC #1 per the team, but the written results aren't captured in this document yet,
+1. Record POC #1 and POC #2's manual test-matrix results into Section 18 and
+   Section 22's Results subsection — both are still blank. Testing has happened for
+   both per the team, but the written results aren't captured in this document yet,
    which matters for anyone reviewing this doc later without having been in the room.
-2. Run POC #2's manual test matrix (see `poc-02-gaze-headpose/README.md`) — not yet
-   done. Pay particular attention to the false-positive-prone scenarios (second
-   monitor, notes on desk) and the pose-axis sign/direction sanity check.
+2. Run POC #3's manual test matrix (see `poc-03-phone-object/README.md`) — not yet
+   done. Pay particular attention to the decoy-object rows (calculator, remote,
+   wallet) — that's the central open question this POC exists to answer.
 3. Resolve Open Questions #1 and #2 — they change the shape of POC #5/#6.
-4. Await explicit approval before starting POC #3, per the working rule governing this
+4. Await explicit approval before starting POC #4, per the working rule governing this
    R&D track.
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
@@ -673,6 +674,81 @@ lighting / low-end webcam / calibrated vs. uncalibrated / extended-run drift.
 matrix in [poc-02-gaze-headpose/README.md](poc-02-gaze-headpose/README.md) in front of
 a webcam. Drop the synthesized results here once that's done.)*
 
+## 23. POC #3 — Phone / Object Detection
+
+**Status: implemented. Awaiting manual test-matrix results.**
+
+**Location:** [poc-03-phone-object/](poc-03-phone-object/) — same standalone,
+unwired pattern as POC #1/#2 (plain HTML/CSS/JS, MediaPipe from CDN, no build step).
+Run instructions in that folder's README.
+
+**Question:** Can a pretrained, no-training-required object detector reliably
+distinguish a phone from visually similar objects (calculator, TV remote, wallet,
+notebook) at typical webcam distance/angle, well enough to be a usable proctoring
+signal? This is the exact open question flagged in Section 10 ("Phone Detection") —
+this POC exists to answer it with real data.
+
+**Possible approaches considered:**
+
+1. TF.js COCO-SSD — pretrained, has a `"cell phone"` class out of the box, but an
+   older/lower-accuracy architecture (SSD MobileNet-based).
+2. YOLOv8n via onnxruntime-web — likely better accuracy/speed, but introduces a
+   second inference runtime alongside MediaPipe (already used for POC #1/#2), plus a
+   separate model format to manage.
+3. MediaPipe Tasks Vision `ObjectDetector` (EfficientDet-Lite0, COCO-pretrained) —
+   same library/CDN/WASM pattern already proven working in POC #1/#2, zero training,
+   has a `"cell phone"` class.
+4. Custom-trained model — explicitly out of scope for a first POC, per Section 10.
+
+**Recommended approach:** Option 3 — MediaPipe `ObjectDetector` with
+EfficientDet-Lite0. Keeps the stack consistent with POC #1/#2 (same runtime, same
+known WASM/GPU-delegate performance profile on this hardware), zero training
+required. If precision proves too low in testing, YOLOv8n is the documented fallback
+to evaluate next — not something to build preemptively.
+
+**Trade-offs:**
+- EfficientDet-Lite0 is MediaPipe's fastest/smallest object-detector variant, chosen
+  for real-time use; Lite2 (heavier, more accurate) is the escalation path if Lite0's
+  precision proves too low.
+- Object detection models are generally heavier than the face-only models in
+  POC #1/#2 — FPS/latency is measured fresh in this POC, not assumed to carry over.
+- Only the COCO `"cell phone"` category drives classification; every other recognized
+  object is still drawn on screen (label + confidence) purely as a diagnostic aid, so
+  testers can see what a decoy object gets misclassified as.
+
+**Risks/limitations:**
+- False positives on visually similar objects (calculator, TV remote, wallet,
+  notebook) — the central open question this POC exists to answer, not assumed away.
+- False negatives on angled, partially occluded, or low-in-frame phones (e.g. held
+  below desk level, a realistic real-world case).
+- COCO's training data isn't webcam-desk-angle-specific — real domain shift risk.
+- Per the existing Decision Log entry on Automatic Exam Pause, none of this feeds
+  auto-pause regardless of measured accuracy — alert-only, unconditionally.
+
+**Success criteria:**
+- Reliable phone-in-view detection within the persistence window.
+- An explicit, measured false-positive rate against a decoy-object set (calculator,
+  remote, wallet, water bottle, empty hand) — not just phone-present/absent testing.
+- FPS/latency benchmarked against POC #1/#2's numbers once those are recorded.
+
+**Minimal implementation scope:** New `poc-03-phone-object/` folder, same
+UI/state-machine/event-log pattern as POC #1/#2 (each POC stays standalone, no shared
+code). Classifies only `NO_PHONE` / `PHONE_DETECTED` based on the COCO
+`"cell phone"` category — no generic "any object" alerting. Same privacy posture:
+all inference local, no upload, localStorage-only event log.
+
+**Testing plan:** phone held up / on desk / near face / at an angle / partially
+occluded / below desk level, decoy objects (calculator, TV remote, wallet, water
+bottle, empty hand — explicitly checking what label each gets), varied
+distance/angle/lighting, brief vs. sustained appearance, extended-run drift.
+
+### POC #3 Results
+
+*(Pending — same as POC #1/#2, this needs a human to actually run the test matrix in
+[poc-03-phone-object/README.md](poc-03-phone-object/README.md) in front of a webcam
+with real objects, especially the decoy-object rows. Drop the synthesized results
+here once that's done.)*
+
 ---
 
 ## Decision Log
@@ -684,7 +760,8 @@ a webcam. Drop the synthesized results here once that's done.)*
 | 2026-09-21 | Automatic exam pause on phone detection | Option A (alert only), Option B (auto-pause), Option C (high-confidence temp auto-pause) | Option A for now | Detection accuracy unvalidated; auto-pause risk (race conditions, black-box exam engine) outweighs benefit until POC #3 produces real numbers | Approved for POC phase |
 | 2026-09-21 | Where should the proctoring backend/dashboard live | VerifyID-Portal, qababoardweb, new standalone service | VerifyID-Portal (proposed) | Reuses existing proctor auth, Pundit policies, and human-review pattern; qababoardweb's ActionCable pattern is worth imitating, not necessarily extending directly | Proposed, not approved |
 | 2026-09-21 | Model choice for POC #1 | MediaPipe Face Detector, MediaPipe Face Landmarker, TF.js face-landmarks-detection | MediaPipe Face Detector (BlazeFace short-range) | Lightest model that satisfies POC #1's scope (presence/position/count only); better signal on real CPU/latency headroom | Approved for POC #1 |
-| 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Approved — implemented, awaiting manual test results |
+| 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Approved — implemented, manually tested, working |
+| 2026-09-22 | Model/approach for POC #3 (phone/object detection) | TF.js COCO-SSD, YOLOv8n via onnxruntime-web, MediaPipe Object Detector (EfficientDet-Lite0), custom-trained model | MediaPipe Object Detector, EfficientDet-Lite0, filtered to the COCO `"cell phone"` category | Keeps the same runtime/library as POC #1/#2 (proven on this hardware), zero training; YOLOv8n documented as the fallback if precision proves too low | Approved — implemented, awaiting manual test results |
 
 ## Experiment Log
 
