@@ -8,6 +8,14 @@
 
 const STORAGE_KEY = "poc4_speaking_vad_events";
 
+// vad-web's default baseAssetPath/onnxWASMBasePath are "./" (relative to this page),
+// NOT an absolute CDN URL, despite what the docs prose implies. Left as defaults,
+// the library's internal dynamic import() of its WASM worker module fails to
+// resolve (surfaces as "Failed to resolve module specifier... base URL is
+// about:blank"). Pointing both explicitly at the CDN directories fixes it.
+const VAD_ASSET_BASE = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/";
+const ONNX_WASM_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+
 const els = {
   startBtn: document.getElementById("startBtn"),
   stopBtn: document.getElementById("stopBtn"),
@@ -59,6 +67,8 @@ async function start() {
   try {
     myvad = await vad.MicVAD.new({
       model: "v5",
+      baseAssetPath: VAD_ASSET_BASE,
+      onnxWASMBasePath: ONNX_WASM_BASE,
       positiveSpeechThreshold: Number(els.cfgPositiveThreshold.value),
       negativeSpeechThreshold: Number(els.cfgNegativeThreshold.value),
       minSpeechMs: Number(els.cfgMinSpeechMs.value),
