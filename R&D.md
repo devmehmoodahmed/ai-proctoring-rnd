@@ -1,10 +1,10 @@
 # AI Proctoring R&D
 
-Status: **POC #1, #2, and #3 all implemented.** POC #1 and POC #2 have been manually
-tested by the team; POC #3 awaiting its manual test pass. None of the three POCs'
-test-matrix results have been recorded in this document yet (Section 18, and the
-Results subsections under Section 22/23, are still blank) — do that before treating
-any of them as fully validated. POC #4+ not started.
+Status: **POC #1–#4 all implemented.** POC #1, #2, and #3 have been manually tested
+by the team; POC #4 awaiting its manual test pass. None of the four POCs' test-matrix
+results have been recorded in this document yet (Section 18, and the Results
+subsections under Section 22/23/24, are still blank) — do that before treating any of
+them as fully validated. POC #5+ not started.
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -481,7 +481,7 @@ Decision Log for status.
 | 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18 |
 | 2 | Gaze / head pose | **Implemented** — see Section 22; results pending manual test pass |
 | 3 | Phone/object detection | **Implemented** — see Section 23; results pending manual test pass |
-| 4 | Audio/speaking detection | Not started |
+| 4 | Audio/speaking detection | **Implemented** — see Section 24; results pending manual test pass |
 | 5 | Screen capture | Not started |
 | 6 | Real-time events → proctor dashboard | Not started |
 | 7 | Evidence rolling-buffer recording | Not started |
@@ -558,15 +558,16 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. Record POC #1 and POC #2's manual test-matrix results into Section 18 and
-   Section 22's Results subsection — both are still blank. Testing has happened for
-   both per the team, but the written results aren't captured in this document yet,
-   which matters for anyone reviewing this doc later without having been in the room.
-2. Run POC #3's manual test matrix (see `poc-03-phone-object/README.md`) — not yet
-   done. Pay particular attention to the decoy-object rows (calculator, remote,
-   wallet) — that's the central open question this POC exists to answer.
+1. Record POC #1, #2, and #3's manual test-matrix results into Section 18 and the
+   Results subsections under Section 22/23 — all still blank. Testing has happened
+   for all three per the team, but the written results aren't captured in this
+   document yet, which matters for anyone reviewing this doc later without having
+   been in the room.
+2. Run POC #4's manual test matrix (see `poc-04-speaking-vad/README.md`) — not yet
+   done. Pay particular attention to whether background noise (typing, music, hvac)
+   stays silent, and whether brief sounds are correctly discarded rather than logged.
 3. Resolve Open Questions #1 and #2 — they change the shape of POC #5/#6.
-4. Await explicit approval before starting POC #4, per the working rule governing this
+4. Await explicit approval before starting POC #5, per the working rule governing this
    R&D track.
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
@@ -749,6 +750,80 @@ distance/angle/lighting, brief vs. sustained appearance, extended-run drift.
 with real objects, especially the decoy-object rows. Drop the synthesized results
 here once that's done.)*
 
+## 24. POC #4 — Speaking / Voice Activity Detection
+
+**Status: implemented. Awaiting manual test-matrix results.**
+
+**Location:** [poc-04-speaking-vad/](poc-04-speaking-vad/) — same standalone,
+unwired pattern as POC #1–3 (no build step, no backend). Run instructions in that
+folder's README. **This is the first POC not built on MediaPipe** — worth flagging,
+since POC #1–3 all shared one validated runtime and this one is a fresh integration.
+
+**Question:** Can we reliably detect sustained candidate speech from the microphone
+using an on-device VAD, with a low false-positive rate on background noise (typing,
+room hum, coughs), without running any speech-to-text?
+
+**Possible approaches considered:**
+
+1. Energy-based VAD (Web Audio API amplitude/RMS thresholding) — zero dependencies,
+   but historically noisy; background noise and taps commonly trigger it.
+2. Silero VAD via `@ricky0123/vad-web` (ONNX model, WASM, on-device) — an ML-based
+   VAD purpose-built to tell speech from noise, already the direction Section 10
+   recommended.
+3. Server-side Whisper/STT — already ruled out (Decision Log): we only need to know
+   *that* someone is speaking, not *what*, and STT has real privacy/cost downsides
+   for that job.
+
+**Recommended approach:** Option 2, Silero VAD via `@ricky0123/vad-web`, using the
+library's own built-in speech/silence smoothing (minimum-speech-length filter +
+"redemption" grace period) rather than layering a second custom persistence state
+machine on top — it already does that job. Energy-based thresholding is documented
+here as the fallback if this CDN-based integration proves unworkable, not something
+built in parallel.
+
+**Trade-offs:**
+- Silero should meaningfully reduce false positives from background noise compared
+  to energy thresholding — the entire reason Section 10 pointed here.
+- New runtime/CDN dependency separate from MediaPipe — real, not-yet-proven
+  integration risk, unlike POC #1–3's shared and now-validated runtime.
+- No transcription means this POC cannot distinguish "reading the exam question
+  aloud" from "talking to someone off-screen" — accepted by design, STT escalation
+  stays gated on this POC's results, not built preemptively.
+
+**Risks/limitations:**
+- Audio consent is a legal question distinct from video consent (Section 11) —
+  flagged for legal review before this touches real candidate audio; fine as a
+  controlled, self-tested prototype in the meantime.
+- Multiple voices in the room, or speech from other rooms/devices (TV, music), may
+  false-positive — untested until the matrix below is run.
+- New dependency not yet validated in this environment — if it fails to load
+  cleanly, that's a real finding for this POC, not just a bug to silently work around.
+
+**Success criteria:**
+- Reliable `SPEECH_SEGMENT` logging for sustained speech, with brief noise (coughs,
+  taps) correctly discarded rather than logged or silently dropped without a trace.
+- Low false-positive rate against common background noise (typing, hvac, music) with
+  no one speaking.
+- CPU/latency overhead measured, not assumed — this runs a different model family
+  than POC #1–3's face/object detectors.
+
+**Minimal implementation scope:** New `poc-04-speaking-vad/` folder, mic-only (no
+camera), reusing the same UI shell/event-log/privacy pattern as POC #1–3 where it
+still applies. Classifies only `SPEECH_SEGMENT` (logged) vs. discarded-too-short
+(counted, not logged) — no transcription, no audio ever recorded or persisted, only
+timestamp + duration per segment.
+
+**Testing plan:** silence, normal speaking, quiet mumbling, background noise alone
+(typing/music/hvac) with no speech, cough/sneeze, sustained speech, mid-sentence
+pause (should not split into two segments), second voice in the room, distance from
+mic, extended-run drift.
+
+### POC #4 Results
+
+*(Pending — same as POC #1–3, this needs a human to actually run the test matrix in
+[poc-04-speaking-vad/README.md](poc-04-speaking-vad/README.md) with a real
+microphone. Drop the synthesized results here once that's done.)*
+
 ---
 
 ## Decision Log
@@ -761,7 +836,8 @@ here once that's done.)*
 | 2026-09-21 | Where should the proctoring backend/dashboard live | VerifyID-Portal, qababoardweb, new standalone service | VerifyID-Portal (proposed) | Reuses existing proctor auth, Pundit policies, and human-review pattern; qababoardweb's ActionCable pattern is worth imitating, not necessarily extending directly | Proposed, not approved |
 | 2026-09-21 | Model choice for POC #1 | MediaPipe Face Detector, MediaPipe Face Landmarker, TF.js face-landmarks-detection | MediaPipe Face Detector (BlazeFace short-range) | Lightest model that satisfies POC #1's scope (presence/position/count only); better signal on real CPU/latency headroom | Approved for POC #1 |
 | 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Approved — implemented, manually tested, working |
-| 2026-09-22 | Model/approach for POC #3 (phone/object detection) | TF.js COCO-SSD, YOLOv8n via onnxruntime-web, MediaPipe Object Detector (EfficientDet-Lite0), custom-trained model | MediaPipe Object Detector, EfficientDet-Lite0, filtered to the COCO `"cell phone"` category | Keeps the same runtime/library as POC #1/#2 (proven on this hardware), zero training; YOLOv8n documented as the fallback if precision proves too low | Approved — implemented, awaiting manual test results |
+| 2026-09-22 | Model/approach for POC #3 (phone/object detection) | TF.js COCO-SSD, YOLOv8n via onnxruntime-web, MediaPipe Object Detector (EfficientDet-Lite0), custom-trained model | MediaPipe Object Detector, EfficientDet-Lite0, filtered to the COCO `"cell phone"` category | Keeps the same runtime/library as POC #1/#2 (proven on this hardware), zero training; YOLOv8n documented as the fallback if precision proves too low | Approved — implemented, manually tested, working |
+| 2026-09-22 | Model/approach for POC #4 (speaking/VAD) | Energy-based VAD, Silero VAD via `@ricky0123/vad-web`, server-side Whisper/STT | Silero VAD via `@ricky0123/vad-web` (ONNX, WASM, on-device); energy-based VAD documented as fallback only | ML-based VAD meaningfully reduces false positives vs. amplitude thresholding, consistent with Section 10; STT already ruled out for privacy/cost (Section 8 finding #4) | Approved — implemented, awaiting manual test results |
 
 ## Experiment Log
 

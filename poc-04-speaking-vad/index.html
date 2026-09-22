@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #4 — Speaking / Voice Activity Detection</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #4 — Speaking / Voice Activity Detection</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. All audio processing runs locally in this browser
+    tab via an on-device voice activity model (WASM) — no audio is ever recorded or
+    sent to a server. Not wired to any production app. See
+    <a href="README.md">README.md</a> for how to run the test matrix and where
+    results get recorded.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This listens to your microphone and tells you when you're speaking versus silent — useful for flagging if a candidate is talking when they shouldn't be.</li>
+      <li>Click <strong>Start microphone</strong>, then try: talking normally, staying completely silent, background noise with no talking (typing, tapping the desk, music), a quick cough or sneeze, and someone else talking in the room.</li>
+      <li>Watch the status message and the level bar above the event log, and the event log below — each row is one completed speech segment with its length.</li>
+      <li>A very brief sound (a cough, a tap) should show up as "discarded" rather than logged as speech — that's expected, not a bug.</li>
+      <li>Nothing is ever recorded or saved — only whether speech happened and for how long.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="audio-panel">
+    <div class="controls">
+      <button id="startBtn">Start microphone</button>
+      <button id="stopBtn" disabled>Stop microphone</button>
+      <span id="liveStatus" class="live-status idle">Microphone not started</span>
+    </div>
+
+    <div class="level-meter">
+      <div id="levelFill" class="level-fill"></div>
+    </div>
+    <p class="hint">Live speech probability — fills green when the model thinks you're speaking.</p>
+
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Speech probability</span><span id="probVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Segments logged</span><span id="segmentCountVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Discarded (too short)</span><span id="misfireCountVal" class="metric-val">0</span></div>
+    </div>
+  </section>
+
+  <section class="config-panel">
+    <h2>Thresholds</h2>
+    <p class="hint">Stop and restart the microphone after changing these for them to take effect.</p>
+    <label>
+      Speech starts above (probability)
+      <input type="range" id="cfgPositiveThreshold" min="0.1" max="0.9" step="0.05" value="0.5" />
+      <span id="cfgPositiveThresholdVal">0.50</span>
+    </label>
+    <label>
+      Speech ends below (probability)
+      <input type="range" id="cfgNegativeThreshold" min="0.05" max="0.85" step="0.05" value="0.35" />
+      <span id="cfgNegativeThresholdVal">0.35</span>
+    </label>
+    <label>
+      Min speech length to log (ms)
+      <input type="number" id="cfgMinSpeechMs" value="400" step="50" min="0" />
+    </label>
+    <label>
+      Grace period before ending a segment (ms)
+      <input type="number" id="cfgRedemptionMs" value="1400" step="100" min="0" />
+    </label>
+  </section>
+
+  <section class="log-panel">
+    <div class="log-header">
+      <h2>Event log</h2>
+      <div class="log-actions">
+        <button id="exportBtn">Export JSON</button>
+        <button id="clearLogBtn">Clear log</button>
+      </div>
+    </div>
+    <p class="hint">Persisted to this browser's localStorage only — nothing is uploaded anywhere. No audio is ever stored, only the timing of each segment.</p>
+    <table id="eventTable">
+      <thead>
+        <tr><th>Time</th><th>Type</th><th>Duration</th><th>Status</th></tr>
+      </thead>
+      <tbody id="eventTableBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

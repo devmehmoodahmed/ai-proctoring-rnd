@@ -14,6 +14,7 @@ findings, trade-offs, decisions, and the full POC roadmap.
 | 1 | [poc-01-face-presence/](poc-01-face-presence/) | Face presence / out-of-frame / multiple faces | Implemented, tested |
 | 2 | [poc-02-gaze-headpose/](poc-02-gaze-headpose/) | Gaze / head-pose ("looking away") | Implemented, tested |
 | 3 | [poc-03-phone-object/](poc-03-phone-object/) | Phone / object detection | Implemented — awaiting manual test pass |
+| 4 | [poc-04-speaking-vad/](poc-04-speaking-vad/) | Speaking / voice activity detection | Implemented — awaiting manual test pass |
 
 Each POC is a standalone folder with its own README (how to run it, what it validates,
 known limitations). No shared build step or dependency between POCs unless a POC's own
