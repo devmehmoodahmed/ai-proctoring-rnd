@@ -1,11 +1,13 @@
 # AI Proctoring R&D
 
-Status: **POC #1–#4 and POC #6 all implemented** (POC #5 and #7/#8 not started — #6
-was prioritized ahead of #5 since it's flagged P0 infra in Section 3, vs. #5's P2).
-POC #1–#4 have all been manually tested by the team; POC #6 awaiting its manual test
-pass. None of these POCs' test-matrix results have been recorded in this document yet
-(Section 18, and the Results subsections under Section 22/23/24/25, are still blank)
-— do that before treating any of them as fully validated.
+Status: **POC #1–#4, #6, and #7 all implemented** (POC #5 and #8 not started — #6
+and #7 were prioritized ahead of #5 since they're flagged P0 infra / P1 in Section 3,
+vs. #5's P2). POC #1–#4 have all been manually tested by the team; POC #6 and POC #7
+are both awaiting their manual test pass. None of these POCs' test-matrix results
+have been recorded in this document yet (Section 18, and the Results subsections
+under Section 22/23/24/25/26, are still blank) — do that before treating any of them
+as fully validated. **POC #7 saves real recorded video to local disk — see its
+README before running it.**
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -485,7 +487,7 @@ Decision Log for status.
 | 4 | Audio/speaking detection | **Implemented** — see Section 24; results pending manual test pass |
 | 5 | Screen capture | Not started |
 | 6 | Real-time events → proctor dashboard | **Implemented** — see Section 25; results pending manual test pass |
-| 7 | Evidence rolling-buffer recording | Not started |
+| 7 | Evidence rolling-buffer recording | **Implemented** — see Section 26; results pending manual test pass |
 | 8 | Practice/onboarding simulator | Not started |
 
 ## 17. POC #1
@@ -568,9 +570,13 @@ those sections record the current best proposal, not an approved architecture.
    yet done. The `curl`-based verification during implementation covered the API/SSE
    mechanism itself; it did not cover multi-tab sync, dashboard reconnect-on-refresh,
    or extended-run behavior, which need a human with two browser tabs open.
-3. Resolve Open Questions #1 and #2 — they change the shape of POC #5 and any real
-   ActionCable integration that follows POC #6.
-4. Await explicit approval before starting POC #5, #7, or #8, per the working rule
+3. Run POC #7's manual test matrix (see `poc-07-evidence-capture/README.md`) — not
+   yet done. The `curl`-based verification during implementation covered the
+   server-side API only; real buffer timing and clip-centering need a human with a
+   real webcam. **Clear the local `clips/` folder after testing.**
+4. Resolve Open Questions #1 and #2 — they change the shape of POC #5 and any real
+   ActionCable/S3 integration that follows POC #6/#7.
+5. Await explicit approval before starting POC #5 or #8, per the working rule
    governing this R&D track.
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
@@ -916,6 +922,114 @@ particularly the multi-tab sync and reconnect rows, which the `curl`-based
 verification above couldn't exercise. Drop the synthesized results here once that's
 done.)*
 
+## 26. POC #7 — Evidence Rolling-Buffer Recording
+
+**Status: implemented. Awaiting manual test-matrix results.**
+
+**Location:** [poc-07-evidence-capture/](poc-07-evidence-capture/). Needs an actual
+running process (`node server.js`), same as POC #6. **Saves real recorded video to
+local disk** — the first POC in this track to do so; see its README's warning
+before running it.
+
+**Question:** Can we maintain a rolling in-memory video buffer, and — only when a
+proctoring alert fires — save a short clip (a few seconds before and after the
+trigger) to storage, without continuously recording or uploading the entire
+session? This is exactly the architecture Section 10 proposed; this POC exists to
+prove the mechanism actually works, not just assume it does.
+
+**Possible approaches considered:**
+
+1. `MediaRecorder` with a manually-managed rolling chunk buffer (1s timeslices,
+   evicting chunks older than the pre-roll window until a trigger freezes it) —
+   what Section 10 specifies, standard and broadly supported.
+2. Periodic canvas frame grabs (a low-res image flipbook instead of real video) —
+   simpler, but not faithful to an actual video-evidence requirement.
+3. WebCodecs API for frame-level buffering control — more powerful, but more
+   complex than this question needs.
+
+**Recommended approach (and what was built):** Option 1.
+
+**Why a local folder, not real S3:** Section 7 already recommends S3 for evidence
+storage. Actually wiring real S3 into an R&D prototype means handling real AWS
+credentials and real cost — a materially bigger step than anything else in this
+track, and not something to do without a separate, explicit decision. What this POC
+needs to prove (rolling capture works, the clip is centered on the trigger, upload
+happens only on a confirmed event, not continuously) doesn't depend on which storage
+backend receives the file. A local folder via a small Node server (same
+zero-dependency pattern as POC #6) answers those questions directly. **S3 remains
+the documented target for real production storage**, unchanged by this choice.
+
+**Trade-offs:**
+- Clip boundaries snap to ~1-second chunk boundaries — "5 seconds before" is
+  approximate, not frame-exact.
+- Overlapping trigger clicks are ignored, not queued — kept out of scope.
+- No persistent metadata index (resets on server restart, though clip files remain
+  on disk) — acceptable for a POC, not for production.
+
+**Risks/limitations:**
+- No retention/TTL enforcement (Section 11 flags this as needed before production;
+  this repo already has a `SelfieRetentionPurgeJob` precedent to follow) — this POC
+  relies on manual clearing via the UI's "Clear all clips" button.
+- Video only, no audio — avoids requiring mic permission on top of camera
+  permission; POC #4 already covers audio separately.
+- Real recorded video touching local disk is new territory for this repo — the
+  `clips/` folder was added to `.gitignore` before any code that could write to it
+  was written, specifically to prevent an accidental commit of test recordings.
+
+**Success criteria:**
+- A captured clip visibly shows the moments before and after the trigger click, not
+  just the instant itself.
+- Clicking "simulate" before the buffer has filled produces a shorter-than-requested
+  pre-roll rather than an error — this is the same "was there enough history
+  buffered yet" question a real deployment needs an answer to.
+- Clear-all removes both the in-memory listing and the actual files on disk.
+
+**Minimal implementation scope:** `server.js` (in-memory metadata + files on disk
+under `clips/`, `POST /evidence`, `GET /evidence`, `GET /clips/:file`,
+`DELETE /evidence`) + `index.html`/`app.js` (real camera, rolling `MediaRecorder`
+buffer, simulate-alert buttons standing in for POC #1–4's real detectors — not
+re-wiring real detection, this POC only tests the recording mechanism).
+
+**Implementation notes (what actually got built, verified by direct testing):**
+- Functionally verified the entire server-side API before handing off the
+  camera/browser part: uploaded a synthetic binary "clip," confirmed it round-trips
+  byte-for-byte through `GET /clips/:file`, confirmed `GET /evidence` lists it
+  correctly, and confirmed `DELETE /evidence` removes both the in-memory record and
+  the actual file from disk. What this couldn't verify — real buffer timing, clip
+  centering around a trigger, and real webcam behavior over an extended run — needs
+  an actual browser and webcam, same limitation as POC #1–4.
+- **Real bug found during human testing, fixed:** the first version used one
+  continuous `MediaRecorder` with a 1-second timeslice, evicting old chunks to
+  bound memory. This produced unplayable clips — only the very first chunk of a
+  recording session contains the WebM container header, so once that chunk aged out
+  of the buffer, every subsequent captured clip was a headerless, broken fragment.
+  It looked fine in the size/latency metrics (those never touch the actual video
+  bytes), which is exactly why the `curl`-based pre-handoff verification above
+  didn't catch it — it never exercised real video encoding, only the file-transfer
+  mechanics. Fixed by restarting `MediaRecorder` every second so each segment is
+  independently valid, and playing a clip back as a sequence of segments rather
+  than one concatenated file (see the POC's README for the full explanation). This
+  is a concrete example of why the "human runs the real test matrix" step in this
+  R&D process (Section 21) is load-bearing, not a formality — no amount of API-level
+  verification would have surfaced this.
+- **Second bug found during the same human testing pass, fixed:** even after fixing
+  the header issue above, segments played back showing "0:00" with a fully-filled
+  progress bar — a separate, well-known `MediaRecorder` quirk where Chrome doesn't
+  write a valid duration into a WebM file's header on normal stop. Fixed by running
+  each segment through `fix-webm-duration` (a small CDN-loaded library that patches
+  the container's binary Duration field) using our own measured wall-clock time, the
+  one deliberate exception to this POC's otherwise zero-dependency pattern —
+  reimplementing WebM/EBML binary patching from scratch wasn't worth the risk of
+  getting subtly wrong. Both bugs are documented in the POC's own README.
+
+### POC #7 Results
+
+*(Pending — this needs a human to actually run the test matrix in
+[poc-07-evidence-capture/README.md](poc-07-evidence-capture/README.md) with a real
+webcam, particularly the pre-roll/post-roll timing rows. Drop the synthesized
+results here once that's done — and clear your local `clips/` folder once you're
+done testing.)*
+
 ---
 
 ## Decision Log
@@ -931,6 +1045,7 @@ done.)*
 | 2026-09-22 | Model/approach for POC #3 (phone/object detection) | TF.js COCO-SSD, YOLOv8n via onnxruntime-web, MediaPipe Object Detector (EfficientDet-Lite0), custom-trained model | MediaPipe Object Detector, EfficientDet-Lite0, filtered to the COCO `"cell phone"` category | Keeps the same runtime/library as POC #1/#2 (proven on this hardware), zero training; YOLOv8n documented as the fallback if precision proves too low | Approved — implemented, manually tested, working |
 | 2026-09-22 | Model/approach for POC #4 (speaking/VAD) | Energy-based VAD, Silero VAD via `@ricky0123/vad-web`, server-side Whisper/STT | Silero VAD via `@ricky0123/vad-web` (ONNX, WASM, on-device); energy-based VAD documented as fallback only | ML-based VAD meaningfully reduces false positives vs. amplitude thresholding, consistent with Section 10; STT already ruled out for privacy/cost (Section 8 finding #4) | Approved — implemented, manually tested, working |
 | 2026-09-23 | Push technology for POC #6 (real-time alerts) | ActionCable (disposable Rails app), Node.js + Server-Sent Events, raw WebSockets (Node `ws`) | Node.js + Server-Sent Events, zero npm dependencies | Validates event schema/review lifecycle/latency without standing up a new Ruby/Rails toolchain just for R&D; ActionCable remains the documented target for the real production integration (Section 7), unchanged by this choice | Approved — implemented, awaiting manual test results |
+| 2026-09-23 | Storage backend for POC #7 (evidence capture) | Real AWS S3, local disk via a small Node server, no storage (client-side download only) | Local disk via a small Node server (`clips/`, gitignored) | Validates the rolling-buffer/upload-on-trigger mechanism without handling real AWS credentials/cost in an R&D prototype; S3 remains the documented target for real production storage (Section 7), unchanged by this choice | Approved — implemented, awaiting manual test results |
 
 ## Experiment Log
 

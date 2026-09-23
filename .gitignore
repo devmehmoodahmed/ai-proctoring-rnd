@@ -5,3 +5,8 @@ node_modules/
 .env.local
 dist/
 build/
+
+# POC #7 saves real recorded video clips to disk for local testing — these must
+# never be committed. See poc-07-evidence-capture/README.md.
+poc-07-evidence-capture/clips/
+*.webm

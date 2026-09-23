@@ -16,6 +16,7 @@ findings, trade-offs, decisions, and the full POC roadmap.
 | 3 | [poc-03-phone-object/](poc-03-phone-object/) | Phone / object detection | Implemented, tested |
 | 4 | [poc-04-speaking-vad/](poc-04-speaking-vad/) | Speaking / voice activity detection | Implemented, tested |
 | 6 | [poc-06-realtime-alerts/](poc-06-realtime-alerts/) | Real-time events → proctor dashboard | Implemented — awaiting manual test pass |
+| 7 | [poc-07-evidence-capture/](poc-07-evidence-capture/) | Evidence rolling-buffer recording | Implemented — awaiting manual test pass |
 
 Each POC is a standalone folder with its own README (how to run it, what it validates,
 known limitations). No shared build step or dependency between POCs unless a POC's own
