@@ -97,22 +97,25 @@ multiple independent WebM headers into one blob isn't reliably playable across
 browsers. You'll see a brief stutter/reload between segments during playback; that's
 this trade-off, not a bug.
 
-### Why each segment shows "0:00" without another fix
+### Known cosmetic issue: segments display "0:00"
 
 A second, separate `MediaRecorder` quirk: Chrome doesn't write a valid duration into
-a WebM file's header when a recording session stops normally — the actual frame
-data is fine, but a player shows "0:00" with a fully-filled progress bar, and
-duration-dependent behavior (seeking, sometimes `ended` firing promptly) gets
-confused. This is a well-known, separate bug from the header-eviction one above —
-fixing one didn't fix the other.
+a WebM file's header when a recording session stops normally, so a player shows
+"0:00" with a fully-filled progress bar. **This is cosmetic only** — confirmed by
+testing that clicking play actually plays real content and correctly advances
+through every segment in order; the underlying frames and the sequential-playback
+mechanism are unaffected.
 
-The fix: each segment blob is passed through
-[`fix-webm-duration`](https://github.com/yusitnikov/fix-webm-duration) (loaded from
-CDN, `window.ysFixWebmDuration`) right after it's recorded, patching the container's
-binary Duration field using our own measured wall-clock time for that segment,
-before it's added to the buffer or uploaded. It logs to the browser console by
-default (e.g. `"Duration section is present, but the value is 0"`) — check there if
-playback still looks wrong, to see whether the fix actually engaged.
+An attempted fix is in place ([`fix-webm-duration`](https://github.com/yusitnikov/fix-webm-duration),
+loaded from CDN as `window.ysFixWebmDuration`, patching each segment's binary
+Duration field using our own measured wall-clock time right after recording it) but
+it does not reliably correct the displayed label for these very short (~1s)
+segments — the library wraps its WebM parsing in a blanket try/catch that silently
+no-ops on failure, so it's likely failing quietly on some structural edge case
+rather than actually patching. Chasing the exact binary-parsing mismatch further
+wasn't worth it once playback itself was confirmed correct — that's what this POC
+actually needs to validate, not a scrubber label. Left in place since it's harmless
+and may still help in some cases; treat the displayed duration as unreliable.
 
 ### Buffer mechanics (why this matters for testing)
 
@@ -150,7 +153,7 @@ node server.js
 |---|---|---|
 | Simulate an alert right after the buffer says "ready" — does the clip actually start ~pre-roll seconds before the click? | | |
 | Simulate an alert too early (before buffer is full) — less pre-roll than requested, not an error | | |
-| Play back a saved clip — does it actually play (not blank/frozen), across all segments? | | |
+| Play back a saved clip — does it actually play (not blank/frozen), across all segments? | ✅ Confirmed 2026-09-23 | Real playback and segment progression work; the "0:00" label is a known cosmetic issue only, see README |
 | Play back a saved clip — is the trigger moment visibly in the middle, not at the very start/end? | | |
 | Try clicking a second "simulate" button while a capture is already in progress (should be ignored) | | |
 | Change pre-roll/post-roll settings, restart camera, capture again | | |
@@ -166,10 +169,11 @@ node server.js
 - A clip plays back as a sequence of segments (brief stutter/reload between each),
   not one seamless file — a deliberate trade-off for guaranteed playability, see
   "Why segments, not one continuous recording" above.
-- Depends on one CDN library (`fix-webm-duration`) for correct duration metadata —
-  the only non-MediaPipe, non-zero-dependency exception in this POC, needed because
-  reimplementing WebM/EBML binary patching from scratch is exactly the kind of thing
-  worth reusing a small, well-established fix for rather than guessing at.
+- Segment duration displays as "0:00" in the player (cosmetic only — confirmed
+  actual playback and segment-to-segment progression work correctly). An attempted
+  fix via `fix-webm-duration` is in place but doesn't reliably correct the label for
+  these short segments; not worth chasing further since it doesn't affect the
+  mechanism this POC is validating. See "Known cosmetic issue" above.
 - In-memory clip metadata resets on server restart, even though the actual clip
   files remain on disk — there's no persistent index, by design for a POC.
 - No retention/TTL enforcement — Section 11 flags this as needed before production

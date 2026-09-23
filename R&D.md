@@ -924,7 +924,9 @@ done.)*
 
 ## 26. POC #7 — Evidence Rolling-Buffer Recording
 
-**Status: implemented. Awaiting manual test-matrix results.**
+**Status: implemented and core mechanism confirmed working by human testing** (real
+playback, correct segment progression). Full test matrix (pre-roll/post-roll timing
+precision, extended-run behavior, etc.) still pending.
 
 **Location:** [poc-07-evidence-capture/](poc-07-evidence-capture/). Needs an actual
 running process (`node server.js`), same as POC #6. **Saves real recorded video to
@@ -1012,23 +1014,31 @@ re-wiring real detection, this POC only tests the recording mechanism).
   is a concrete example of why the "human runs the real test matrix" step in this
   R&D process (Section 21) is load-bearing, not a formality — no amount of API-level
   verification would have surfaced this.
-- **Second bug found during the same human testing pass, fixed:** even after fixing
-  the header issue above, segments played back showing "0:00" with a fully-filled
-  progress bar — a separate, well-known `MediaRecorder` quirk where Chrome doesn't
-  write a valid duration into a WebM file's header on normal stop. Fixed by running
-  each segment through `fix-webm-duration` (a small CDN-loaded library that patches
-  the container's binary Duration field) using our own measured wall-clock time, the
-  one deliberate exception to this POC's otherwise zero-dependency pattern —
-  reimplementing WebM/EBML binary patching from scratch wasn't worth the risk of
-  getting subtly wrong. Both bugs are documented in the POC's own README.
+- **Second issue found during the same human testing pass, confirmed cosmetic-only:**
+  even after fixing the header issue above, segments displayed "0:00" with a
+  fully-filled progress bar — a separate, well-known `MediaRecorder` quirk where
+  Chrome doesn't write a valid duration into a WebM file's header on normal stop.
+  Attempted a fix via `fix-webm-duration` (a small CDN-loaded library patching the
+  container's binary Duration field), which does not reliably correct the label for
+  these short (~1s) segments — it silently no-ops on some structural mismatch. The
+  important question, though, is answered: the human tester confirmed actual
+  playback and segment-to-segment progression work correctly regardless of the
+  displayed duration, which is what this POC needs to validate. Left as a documented
+  cosmetic limitation rather than pursued further — chasing exact WebM/EBML binary
+  internals for a scrubber label isn't proportionate once the underlying mechanism
+  is confirmed working. Both issues are documented in the POC's own README.
 
 ### POC #7 Results
 
-*(Pending — this needs a human to actually run the test matrix in
-[poc-07-evidence-capture/README.md](poc-07-evidence-capture/README.md) with a real
-webcam, particularly the pre-roll/post-roll timing rows. Drop the synthesized
-results here once that's done — and clear your local `clips/` folder once you're
-done testing.)*
+**Confirmed (2026-09-23):** real playback works and correctly progresses through all
+segments of a captured clip (tested with a `PHONE_DETECTED` simulated alert, 9
+segments, 2.45MB). Two bugs were found and addressed during this pass — see
+"Implementation notes" above (unplayable clips from header eviction — fixed and
+confirmed; "0:00" duration display — cosmetic only, playback unaffected).
+
+*(Still pending: the rest of the test matrix — pre-roll/post-roll timing precision,
+decoy/edge-case scenarios, extended-run behavior. Drop those results here once
+that's done — and clear your local `clips/` folder once you're done testing.)*
 
 ---
 
