@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #6 — Proctor Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #6 — Proctor Dashboard</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. Live feed of proctoring alerts, for a human to
+    review — AI flags, a person decides. See <a href="README.md">README.md</a> for
+    the test matrix.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This is the proctor's view. Open <a href="candidate.html">candidate.html</a> in another tab or window to send it simulated alerts.</li>
+      <li>Each alert needs a decision: <strong>Acknowledge</strong> it first, then <strong>Confirm</strong>, <strong>Dismiss</strong>, or mark <strong>False positive</strong> — the AI never decides on its own.</li>
+      <li>The time shown on each card is how long it took to arrive after being sent — that's the thing this POC is really testing.</li>
+      <li>Try opening this page in two browser tabs at once — both should receive the same alerts and stay in sync when either one reviews an event.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="status-panel">
+    <div class="controls">
+      <span id="connectionStatus" class="live-status idle">Connecting…</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Total alerts</span><span id="totalVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Awaiting review</span><span id="pendingVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Avg. delivery latency</span><span id="latencyVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="feed-panel">
+    <h2>Live alert feed</h2>
+    <p class="hint">Newest first. Nothing here is stored on a server disk or database — this is an in-memory demo; restarting server.js clears it.</p>
+    <div id="feed" class="feed"></div>
+  </section>
+</main>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

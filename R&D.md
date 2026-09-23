@@ -1,10 +1,11 @@
 # AI Proctoring R&D
 
-Status: **POC #1–#4 all implemented.** POC #1, #2, and #3 have been manually tested
-by the team; POC #4 awaiting its manual test pass. None of the four POCs' test-matrix
-results have been recorded in this document yet (Section 18, and the Results
-subsections under Section 22/23/24, are still blank) — do that before treating any of
-them as fully validated. POC #5+ not started.
+Status: **POC #1–#4 and POC #6 all implemented** (POC #5 and #7/#8 not started — #6
+was prioritized ahead of #5 since it's flagged P0 infra in Section 3, vs. #5's P2).
+POC #1–#4 have all been manually tested by the team; POC #6 awaiting its manual test
+pass. None of these POCs' test-matrix results have been recorded in this document yet
+(Section 18, and the Results subsections under Section 22/23/24/25, are still blank)
+— do that before treating any of them as fully validated.
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -483,7 +484,7 @@ Decision Log for status.
 | 3 | Phone/object detection | **Implemented** — see Section 23; results pending manual test pass |
 | 4 | Audio/speaking detection | **Implemented** — see Section 24; results pending manual test pass |
 | 5 | Screen capture | Not started |
-| 6 | Real-time events → proctor dashboard | Not started |
+| 6 | Real-time events → proctor dashboard | **Implemented** — see Section 25; results pending manual test pass |
 | 7 | Evidence rolling-buffer recording | Not started |
 | 8 | Practice/onboarding simulator | Not started |
 
@@ -558,17 +559,19 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. Record POC #1, #2, and #3's manual test-matrix results into Section 18 and the
-   Results subsections under Section 22/23 — all still blank. Testing has happened
-   for all three per the team, but the written results aren't captured in this
-   document yet, which matters for anyone reviewing this doc later without having
-   been in the room.
-2. Run POC #4's manual test matrix (see `poc-04-speaking-vad/README.md`) — not yet
-   done. Pay particular attention to whether background noise (typing, music, hvac)
-   stays silent, and whether brief sounds are correctly discarded rather than logged.
-3. Resolve Open Questions #1 and #2 — they change the shape of POC #5/#6.
-4. Await explicit approval before starting POC #5, per the working rule governing this
-   R&D track.
+1. Record POC #1–#4's manual test-matrix results into Section 18 and the Results
+   subsections under Section 22/23/24 — all still blank. Testing has happened for
+   all four per the team, but the written results aren't captured in this document
+   yet, which matters for anyone reviewing this doc later without having been in the
+   room.
+2. Run POC #6's manual test matrix (see `poc-06-realtime-alerts/README.md`) — not
+   yet done. The `curl`-based verification during implementation covered the API/SSE
+   mechanism itself; it did not cover multi-tab sync, dashboard reconnect-on-refresh,
+   or extended-run behavior, which need a human with two browser tabs open.
+3. Resolve Open Questions #1 and #2 — they change the shape of POC #5 and any real
+   ActionCable integration that follows POC #6.
+4. Await explicit approval before starting POC #5, #7, or #8, per the working rule
+   governing this R&D track.
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
 
@@ -824,6 +827,95 @@ mic, extended-run drift.
 [poc-04-speaking-vad/README.md](poc-04-speaking-vad/README.md) with a real
 microphone. Drop the synthesized results here once that's done.)*
 
+## 25. POC #6 — Real-Time Events → Proctor Dashboard
+
+**Status: implemented. Awaiting manual test-matrix results.**
+
+**Location:** [poc-06-realtime-alerts/](poc-06-realtime-alerts/). Unlike POC #1–4,
+this one needs an actual running process (`node server.js`), not just a static file
+server — it's the first POC involving two separate clients (a candidate producing
+events, a proctor dashboard consuming them) rather than a single self-contained tab.
+
+**Note on sequencing:** POC #5 (screen capture, P2) was skipped in favor of this one,
+since Section 3 flags real-time alerting as P0 infra — it's the plumbing that gets
+POC #1–4's events in front of a human proctor, which is more foundational than
+another detection signal.
+
+**Question:** Can browser-side detection events reach a separate proctor dashboard
+in near-real-time, with a human-in-the-loop review lifecycle (acknowledge →
+confirm/dismiss/false-positive, per Section 13), at latency/schema/UX
+characteristics that would transfer directly to a real ActionCable implementation
+later?
+
+**Possible approaches considered:**
+
+1. ActionCable in a disposable Rails app (even with the in-process `async` adapter,
+   no Redis needed) — most faithful to Section 7's actual recommendation, but a real
+   step up in setup cost (new Ruby/Rails/Bundler toolchain) from every prior POC.
+2. Plain Node.js + Server-Sent Events (built-in `http` module only) — zero
+   dependencies, `node server.js` is the only thing to run.
+3. Raw WebSockets via Node's `ws` package — closer to ActionCable's transport, but
+   requires `npm install`, breaking the zero-install pattern kept so far.
+
+**Recommended approach (and what was built):** Option 2. This POC's real question is
+the event schema, the review lifecycle, and delivery latency — not whether
+ActionCable-the-technology works, which is already a settled, low-risk call (Section
+7) proven working today in qababoardweb. **ActionCable remains the documented target
+for the real production integration** — this POC's schema and dashboard UX are meant
+to carry over to that directly, not replace it.
+
+**Trade-offs:**
+- SSE is push-only (server→client); the candidate→server direction only needed a
+  plain `POST`, so full bidirectional WebSockets weren't actually required for what
+  this POC tests.
+- In-memory event store only — restarting the server drops everything. Deliberately
+  out of scope; persistence is POC #7's territory (evidence/history), not this one's.
+- Choosing a stand-in technology means this POC cannot validate ActionCable-specific
+  operational concerns (Redis pub/sub behavior, Rails boot time, its own reconnect
+  behavior) — if those need validating before real integration, that's a distinct
+  future exercise.
+
+**Risks/limitations:**
+- No auth on any endpoint (matches the "standalone, unwired" pattern) — real
+  integration sits behind VerifyID-Portal's existing proctor auth/Pundit policies,
+  not this POC's job to add.
+- Concurrent-review races (two proctors acting on the same event at once) are
+  handled by a server-side status check (loser gets a 409), but there's no polished
+  conflict UI — a plain `alert()` for now.
+- Latency is measured on localhost between two tabs on one machine — a baseline for
+  the mechanism, not a real-network or real-candidate-hardware figure.
+
+**Success criteria:**
+- An event fired from the candidate page appears on the dashboard within a low,
+  measured latency.
+- The full review lifecycle works and rejects out-of-order actions (e.g. confirming
+  before acknowledging).
+- Two dashboard tabs open simultaneously both receive the same events and stay in
+  sync, including when either one performs a review action.
+
+**Minimal implementation scope:** `server.js` (in-memory store, `POST /events`, SSE
+stream, `POST /events/:id/review`), `candidate.html`/`candidate.js` (one button per
+POC #1–4 event type, simulated — not wired to a real camera/mic), and
+`dashboard.html`/`dashboard.js` (live feed, latency display, review actions). No
+database, no auth, no evidence capture.
+
+**Implementation notes (what actually got built, verified by direct testing):**
+- Functionally verified end-to-end via `curl` before handing off for manual/browser
+  testing: `POST /events` creates and broadcasts correctly, the SSE stream delivers
+  both the backlog (for a newly opened dashboard) and live `created`/`updated`
+  events, and the lifecycle guard correctly rejected an out-of-order `confirm`
+  before `acknowledge` with a 409. This is stronger pre-handoff verification than
+  POC #1–4 could get (those need a real webcam/mic and a human in the loop from the
+  start) — this POC's core mechanism doesn't.
+
+### POC #6 Results
+
+*(Pending — this needs a human to actually open two browser tabs and run the test
+matrix in [poc-06-realtime-alerts/README.md](poc-06-realtime-alerts/README.md),
+particularly the multi-tab sync and reconnect rows, which the `curl`-based
+verification above couldn't exercise. Drop the synthesized results here once that's
+done.)*
+
 ---
 
 ## Decision Log
@@ -837,7 +929,8 @@ microphone. Drop the synthesized results here once that's done.)*
 | 2026-09-21 | Model choice for POC #1 | MediaPipe Face Detector, MediaPipe Face Landmarker, TF.js face-landmarks-detection | MediaPipe Face Detector (BlazeFace short-range) | Lightest model that satisfies POC #1's scope (presence/position/count only); better signal on real CPU/latency headroom | Approved for POC #1 |
 | 2026-09-22 | Model/approach for POC #2 (gaze/head-pose) | MediaPipe Face Landmarker w/ built-in transformation matrix, manual solvePnP from landmarks, TF.js face-landmarks-detection, OpenCV.js+solvePnP, iris-based gaze | MediaPipe Face Landmarker, built-in `outputFacialTransformationMatrixes` for yaw/pitch/roll; head pose primary, iris gaze out of scope | Simplest path to a robust head-pose signal; consistent with Section 8 finding #2 that pupil-gaze is too noisy to be primary | Approved — implemented, manually tested, working |
 | 2026-09-22 | Model/approach for POC #3 (phone/object detection) | TF.js COCO-SSD, YOLOv8n via onnxruntime-web, MediaPipe Object Detector (EfficientDet-Lite0), custom-trained model | MediaPipe Object Detector, EfficientDet-Lite0, filtered to the COCO `"cell phone"` category | Keeps the same runtime/library as POC #1/#2 (proven on this hardware), zero training; YOLOv8n documented as the fallback if precision proves too low | Approved — implemented, manually tested, working |
-| 2026-09-22 | Model/approach for POC #4 (speaking/VAD) | Energy-based VAD, Silero VAD via `@ricky0123/vad-web`, server-side Whisper/STT | Silero VAD via `@ricky0123/vad-web` (ONNX, WASM, on-device); energy-based VAD documented as fallback only | ML-based VAD meaningfully reduces false positives vs. amplitude thresholding, consistent with Section 10; STT already ruled out for privacy/cost (Section 8 finding #4) | Approved — implemented, awaiting manual test results |
+| 2026-09-22 | Model/approach for POC #4 (speaking/VAD) | Energy-based VAD, Silero VAD via `@ricky0123/vad-web`, server-side Whisper/STT | Silero VAD via `@ricky0123/vad-web` (ONNX, WASM, on-device); energy-based VAD documented as fallback only | ML-based VAD meaningfully reduces false positives vs. amplitude thresholding, consistent with Section 10; STT already ruled out for privacy/cost (Section 8 finding #4) | Approved — implemented, manually tested, working |
+| 2026-09-23 | Push technology for POC #6 (real-time alerts) | ActionCable (disposable Rails app), Node.js + Server-Sent Events, raw WebSockets (Node `ws`) | Node.js + Server-Sent Events, zero npm dependencies | Validates event schema/review lifecycle/latency without standing up a new Ruby/Rails toolchain just for R&D; ActionCable remains the documented target for the real production integration (Section 7), unchanged by this choice | Approved — implemented, awaiting manual test results |
 
 ## Experiment Log
 

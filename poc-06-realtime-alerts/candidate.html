@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #6 — Candidate Side (Simulate Events)</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #6 — Candidate Side (Simulate Events)</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. Simulates the events POC #1–4's real detectors would
+    produce, so we can test event delivery and the review workflow without needing a
+    live camera/mic here. See <a href="README.md">README.md</a> for the test matrix.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>This page pretends to be a candidate's browser sending proctoring alerts. Open <a href="dashboard.html">dashboard.html</a> in another tab or window first — that's where the alerts show up.</li>
+      <li>Click any button below to send one simulated event to the dashboard.</li>
+      <li>Watch it appear on the dashboard almost instantly, and try acknowledging/confirming/dismissing it there.</li>
+      <li>Try opening the dashboard in two separate tabs — both should receive the same events at the same time.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="event-panel">
+    <h2>Simulate an event</h2>
+    <div class="config-row">
+      <label>Confidence <input type="range" id="cfgConfidence" min="0" max="1" step="0.05" value="0.8" /> <span id="cfgConfidenceVal">0.80</span></label>
+      <label>Session ID <input type="text" id="cfgSession" value="demo-session" /></label>
+    </div>
+    <div class="event-grid">
+      <button class="event-btn" data-type="FACE_MISSING" data-detail="No face detected for 3.2s">
+        <span class="label">Face missing</span><span class="sub">POC #1</span>
+      </button>
+      <button class="event-btn" data-type="MULTIPLE_FACES" data-detail="2 faces detected">
+        <span class="label">Multiple faces</span><span class="sub">POC #1</span>
+      </button>
+      <button class="event-btn" data-type="OUT_OF_FRAME" data-detail="Face at frame edge">
+        <span class="label">Out of frame</span><span class="sub">POC #1</span>
+      </button>
+      <button class="event-btn" data-type="TOO_FAR" data-detail="Face area below threshold">
+        <span class="label">Too far</span><span class="sub">POC #1</span>
+      </button>
+      <button class="event-btn" data-type="LOOKING_AWAY" data-detail="yaw 34.2°, held 4.1s">
+        <span class="label">Looking away</span><span class="sub">POC #2</span>
+      </button>
+      <button class="event-btn" data-type="PHONE_DETECTED" data-detail="cell phone, held 2.8s">
+        <span class="label">Phone detected</span><span class="sub">POC #3</span>
+      </button>
+      <button class="event-btn" data-type="SPEECH_SEGMENT" data-detail="4.6s speech segment">
+        <span class="label">Speech detected</span><span class="sub">POC #4</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="log-panel">
+    <h2>Sent events (this tab)</h2>
+    <p class="hint" id="connectionStatus">Checking connection…</p>
+    <table id="sentTable">
+      <thead><tr><th>Time</th><th>Type</th><th>Server ID</th><th>Result</th></tr></thead>
+      <tbody id="sentTableBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="candidate.js"></script>
+</body>
+</html>

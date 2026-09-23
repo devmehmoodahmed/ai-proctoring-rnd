@@ -64,13 +64,18 @@
     </li>
     <li>
       <a href="poc-03-phone-object/">POC #3 — Phone / Object Detection</a>
-      <span class="status pending">awaiting test pass</span>
+      <span class="status done">implemented, tested</span>
       <p class="desc">MediaPipe Object Detector (EfficientDet-Lite0). Detects a phone in view, and shows what decoy objects (calculator, remote, wallet) get mistaken for.</p>
     </li>
     <li>
       <a href="poc-04-speaking-vad/">POC #4 — Speaking / Voice Activity Detection</a>
-      <span class="status pending">awaiting test pass</span>
+      <span class="status done">implemented, tested</span>
       <p class="desc">Silero VAD (on-device). Detects when the candidate is speaking versus silent — no transcription, no audio ever recorded.</p>
+    </li>
+    <li>
+      <a href="poc-06-realtime-alerts/candidate.html">POC #6 — Real-Time Events → Proctor Dashboard</a>
+      <span class="status pending">awaiting test pass</span>
+      <p class="desc">Node.js + Server-Sent Events. Simulated alerts flow from a candidate page to a live proctor dashboard with an acknowledge/confirm/dismiss review workflow. Needs <code>node server.js</code> — see its README.</p>
     </li>
   </ul>
   <p class="footer">Run each POC from its own folder — see that folder's README for instructions.</p>
