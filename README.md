@@ -15,8 +15,10 @@ findings, trade-offs, decisions, and the full POC roadmap.
 | 2 | [poc-02-gaze-headpose/](poc-02-gaze-headpose/) | Gaze / head-pose ("looking away") | Implemented, tested |
 | 3 | [poc-03-phone-object/](poc-03-phone-object/) | Phone / object detection | Implemented, tested |
 | 4 | [poc-04-speaking-vad/](poc-04-speaking-vad/) | Speaking / voice activity detection | Implemented, tested |
-| 6 | [poc-06-realtime-alerts/](poc-06-realtime-alerts/) | Real-time events → proctor dashboard | Implemented — awaiting manual test pass |
-| 7 | [poc-07-evidence-capture/](poc-07-evidence-capture/) | Evidence rolling-buffer recording | Implemented — awaiting manual test pass |
+| 5 | [poc-05-screen-capture/](poc-05-screen-capture/) | Screen capture / live proctor viewing | Implemented — automated runs done, manual matrix pending |
+| 6 | [poc-06-realtime-alerts/](poc-06-realtime-alerts/) | Real-time events → proctor dashboard | Implemented, tested |
+| 7 | [poc-07-evidence-capture/](poc-07-evidence-capture/) | Evidence rolling-buffer recording | Implemented, tested |
+| 8 | — | Practice / onboarding simulator | Proposed (R&D.md Section 28), awaiting approval |
 
 Each POC is a standalone folder with its own README (how to run it, what it validates,
 known limitations). No shared build step or dependency between POCs unless a POC's own

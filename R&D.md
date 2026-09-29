@@ -1,13 +1,14 @@
 # AI Proctoring R&D
 
-Status: **POC #1–#4, #6, and #7 all implemented** (POC #5 and #8 not started — #6
-and #7 were prioritized ahead of #5 since they're flagged P0 infra / P1 in Section 3,
-vs. #5's P2). POC #1–#4 have all been manually tested by the team; POC #6 and POC #7
-are both awaiting their manual test pass. None of these POCs' test-matrix results
-have been recorded in this document yet (Section 18, and the Results subsections
-under Section 22/23/24/25/26, are still blank) — do that before treating any of them
-as fully validated. **POC #7 saves real recorded video to local disk — see its
-README before running it.**
+Status: **POC #1–#7 implemented; POC #8 not started (proposal in Section 28, awaiting
+approval).** POC #1–#4, #6 and #7 have been manually tested by the team. POC #5
+(screen capture, Section 27) was implemented and verified with automated browser
+runs on 2026-09-23; its manual test matrix (real picker, multi-monitor, macOS
+permission, other browsers, real network) is still pending. The written
+test-matrix results for POC #1–#4/#6 are not yet recorded here (Section 18 and the
+Results subsections under Section 22–25). Record them before treating those POCs as
+fully validated. **POC #7 saves real recorded video to local disk; see its README
+before running it.**
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -69,7 +70,7 @@ See the original R&D brief (sections A–14 as provided) for the full list. Summ
 | Gaze / head-pose ("looking away") | P0 | POC #2 |
 | Phone / object detection | P1 | POC #3 |
 | Speaking / voice activity detection | P1 | POC #4 |
-| Screen capture / viewing | P2 | POC #5 |
+| Screen capture / viewing | P2 | POC #5 (implemented — Section 27) |
 | Real-time proctor alerting | P0 (infra) | POC #6 |
 | Rolling-buffer evidence capture | P1 | POC #7 |
 | Practice/onboarding simulator | P2 | POC #8 |
@@ -264,7 +265,7 @@ This is a proposal, not a locked decision — see Decision Log.
 | VAD / speech | Web Audio API + energy-based VAD, Silero VAD via WASM (`@ricky0123/vad-web`), server-side Whisper | VAD first; full STT only if VAD proves insufficient — see Section 10. |
 | Real-time alerts | ActionCable (Redis-backed, already configured in this repo, already *used* in qababoardweb), raw WebSockets, SSE | ActionCable is the path of least resistance — infra already exists in both repos. |
 | Evidence storage | S3 (already used for ActiveStorage/Rekognition uploads here), Cloudflare R2 | Stay on S3 — no new vendor relationship needed. |
-| Screen capture | `getDisplayMedia()` + WebRTC | View/record only — remote control explicitly not recommended (Section 10). |
+| Screen capture | `getDisplayMedia()` + WebRTC | View/record only — remote control explicitly not recommended (Section 10). POC #5 validated P2P WebRTC with signaling over the existing push channel; production needs TURN; SFU only if >1 viewer per candidate or server-side recording is required (Section 27). |
 
 ## 8. Research Findings
 
@@ -369,7 +370,9 @@ build-first-to-learn, re-evaluate buy after POC #3/#4 give us real accuracy numb
   candidate's screen" is view/record, not control. Remote control is a materially
   larger security and consent undertaking with no clear requirement driving it in the
   brief.
-- **Status:** not yet built. Proposed as POC #5.
+- **Status:** implemented as POC #5 — see Section 27 (research, measured results,
+  multi-monitor limits, and why remote control is neither possible from a browser
+  nor needed).
 
 ### Evidence Recording
 
@@ -468,6 +471,11 @@ flags. Every alert must carry confidence and a plain-language reason
 | Biometric/audio data handling triggers compliance exposure | Medium | High | Legal/compliance review before any real candidate data is processed (Section 11) |
 | SEB may already provide lockdown, making some detections redundant or lower priority | Unknown | Medium | Resolve as Open Question before finalizing POC #5/#6 scope |
 | Leftover `deploy.yml` boilerplate suggests infra config isn't fully owned/audited | Low-Medium | Low-Medium | Flag to infra owner; don't build deployment assumptions on it yet |
+| Candidates can't share screen on exam day (macOS Screen Recording permission, needs browser relaunch; indistinguishable from "Cancel") | High on macOS | High | Pre-exam check in POC #8; explicit macOS walkthrough; never discover this at exam start |
+| Candidate shares one monitor, uses another | Medium | Medium | Single-monitor policy + `MULTIPLE_MONITORS` alert (Chromium `screen.isExtended`); webcam head-turn (POC #2); cannot be fully closed from a browser (Section 27) |
+| Screen-view request from an unauthorized party | Medium if unaddressed | High | Server-brokered view requests only, scoped to the proctor assigned to that session (Pundit) — POC #5 has no auth by design |
+| Some candidate networks can't connect P2P | Medium | Medium | TURN (TLS/443) required in production — not in POC #5 |
+| Entire-screen share exposes unrelated personal data (notifications, messages) | Medium | Medium | Candidate instructions + consent review; no recording by default; P2P keeps video off our servers |
 
 ## 15. Recommended Architecture
 
@@ -482,13 +490,13 @@ Decision Log for status.
 | # | Goal | Status |
 |---|---|---|
 | 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18 |
-| 2 | Gaze / head pose | **Implemented** — see Section 22; results pending manual test pass |
-| 3 | Phone/object detection | **Implemented** — see Section 23; results pending manual test pass |
-| 4 | Audio/speaking detection | **Implemented** — see Section 24; results pending manual test pass |
-| 5 | Screen capture | Not started |
-| 6 | Real-time events → proctor dashboard | **Implemented** — see Section 25; results pending manual test pass |
-| 7 | Evidence rolling-buffer recording | **Implemented** — see Section 26; results pending manual test pass |
-| 8 | Practice/onboarding simulator | Not started |
+| 2 | Gaze / head pose | **Implemented, tested** — see Section 22; written results pending |
+| 3 | Phone/object detection | **Implemented, tested** — see Section 23; written results pending |
+| 4 | Audio/speaking detection | **Implemented, tested** — see Section 24; written results pending |
+| 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual matrix pending |
+| 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; written results pending |
+| 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26 |
+| 8 | Practice/onboarding simulator | Not started — proposal in Section 28, awaiting approval |
 
 ## 17. POC #1
 
@@ -558,6 +566,14 @@ those sections record the current best proposal, not an approved architecture.
 5. Confirm `config/deploy.yml`'s `eob-parser` leftover config isn't accidentally live
    — unrelated to proctoring, but discovered during this inspection and worth a
    separate ticket.
+6. If SEB is enforced: does `getDisplayMedia()` work inside SEB's kiosk at all, and
+   does SEB make live screen viewing redundant? (POC #5 assumes a normal browser.)
+7. Is screen monitoring covered by the existing candidate consent, or does
+   entire-screen sharing need its own consent language (Section 11, Section 27)?
+8. Policy: must screen sharing be active to *start* the exam, and what happens if it
+   stops mid-exam? (Alert-only is consistent with the Automatic Exam Pause decision;
+   gating exam *start* is a separate product decision.)
+9. Who hosts TURN in production — self-hosted coturn or a managed TURN service?
 
 ## 21. Next Steps
 
@@ -574,10 +590,15 @@ those sections record the current best proposal, not an approved architecture.
    yet done. The `curl`-based verification during implementation covered the
    server-side API only; real buffer timing and clip-centering need a human with a
    real webcam. **Clear the local `clips/` folder after testing.**
-4. Resolve Open Questions #1 and #2 — they change the shape of POC #5 and any real
-   ActionCable/S3 integration that follows POC #6/#7.
-5. Await explicit approval before starting POC #5 or #8, per the working rule
-   governing this R&D track.
+4. Resolve Open Questions #1 and #2 — they change the shape of any real
+   ActionCable/S3 integration that follows POC #6/#7, and #1 (SEB) directly affects
+   whether POC #5's screen viewing is needed/possible at exam time.
+5. Run POC #5's manual test matrix (`poc-05-screen-capture/README.md`) — in
+   particular real window/tab rejection, a real second monitor, the macOS permission
+   flow, Firefox/Safari/Edge on Windows, a cross-machine network test, and 5+
+   candidates on separate machines. Record results in Section 27.
+6. Review the POC #8 proposal (Section 28) and approve/adjust scope before any
+   implementation, per the working rule governing this R&D track.
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
 
@@ -1040,6 +1061,305 @@ confirmed; "0:00" duration display — cosmetic only, playback unaffected).
 decoy/edge-case scenarios, extended-run behavior. Drop those results here once
 that's done — and clear your local `clips/` folder once you're done testing.)*
 
+## 27. POC #5 — Screen Capture / Live Proctor Viewing
+
+**Status: implemented. Core mechanism verified by automated browser runs (headless
+Chromium). The manual test matrix is still pending: real OS picker, real
+multi-monitor, macOS permission flow, Firefox/Safari/Edge/Windows, real network.**
+
+**Location:** [poc-05-screen-capture/](poc-05-screen-capture/). It needs
+`node server.js`, like POC #6/#7. It records nothing: video goes peer-to-peer and never
+touches the server.
+
+**Question:** Can a candidate share their **entire screen** from an ordinary desktop
+browser, and can a proctor watch it **live** with low latency and modest bandwidth?
+And can the proctor be told immediately when sharing stops, the wrong surface is
+picked, or a second monitor is present?
+
+### Research
+
+**The browser primitive.** `navigator.mediaDevices.getDisplayMedia()` is the only
+way a web page can capture the screen. It always shows a browser/OS picker, it
+needs a user gesture and a secure context (HTTPS/localhost), and the browser shows
+a sharing indicator the page can't hide. What the page can and can't control:
+
+| Control | Chrome / Edge | Firefox | Safari (macOS) |
+|---|---|---|---|
+| Hint "entire screen" (`displaySurface: "monitor"`) | Yes, pre-selects the pane | Own picker | **Ignored.** Safari moved to the macOS system picker ([mdn/content#42218](https://github.com/mdn/content/issues/42218)) |
+| Hide the current tab / tab-switch button (`selfBrowserSurface`, `surfaceSwitching`, `monitorTypeSurfaces`) | Yes (Chrome-only options, [Chrome docs](https://developer.chrome.com/docs/web-platform/screen-sharing-controls)) | Ignored | Ignored |
+| **Verify what was actually picked** (`track.getSettings().displaySurface`) | Yes, **this is the enforcement point** | Reported per MDN (to confirm in manual test) | To confirm in manual test |
+| Know another monitor exists (`screen.isExtended`, no prompt) | Yes (Window Management API) | No | No |
+| List monitors (`getScreenDetails()`, permission prompt) | Yes | No | No |
+| Capture *all* monitors at once (`getAllScreensMedia()`) | Only managed ChromeOS / Isolated Web Apps with admin policy ([intent](https://groups.google.com/a/chromium.org/g/blink-dev/c/HtBrZ9r_ZHU)), **not usable for BYOD candidates** | No | No |
+| Mobile (iOS/Android) | Not supported, so candidates need a desktop/laptop | | |
+
+The spec itself is still a Working Draft ([W3C Screen Capture](https://www.w3.org/TR/2026/WD-screen-capture-20260827/)).
+Chrome is the main implementer of the newer controls.
+
+**OS-level permissions.**
+- **macOS:** the browser needs Screen Recording permission (System Settings →
+  Privacy & Security). The first grant needs a browser relaunch. macOS 15 (Sequoia)
+  added periodic re-confirmation prompts for screen-recording apps, now monthly
+  ([9to5Mac](https://9to5mac.com/2024/08/14/macos-sequoia-screen-recording-prompt-monthly/),
+  [MacRumors](https://www.macrumors.com/2024/08/15/macos-sequoia-screen-recording-app-permissions/)).
+  Whether and when this hits browsers mid-exam needs manual confirmation. Missing
+  permission surfaces as a generic `NotAllowedError`, the same error as the
+  candidate clicking Cancel. **This is the #1 onboarding risk**, and it feeds POC #8
+  directly.
+- **Windows:** no OS permission is needed.
+- **Managed devices:** Chrome enterprise policy (`ScreenCaptureAllowed`) can block
+  capture entirely.
+
+**Viewing and recording approaches considered:**
+
+1. **`getDisplayMedia` + WebRTC peer-to-peer to the assigned proctor.** Signaling
+   goes over the push channel we already have (POC #6 → ActionCable). Lowest latency,
+   no media servers, and media is DTLS-SRTP encrypted end to end, so our servers never
+   see screen content. Needs a TURN server in production. Each extra viewer costs the
+   candidate a full extra encode and upload. **What was built.**
+2. **`getDisplayMedia` + self-hosted SFU** (LiveKit OSS, mediasoup, Janus). The
+   candidate uploads once and any number of proctors or supervisors can watch.
+   Server-side recording is possible. Costs: a media server to run and scale, and the
+   SFU terminates DTLS, so it *can* see screen content unless E2EE (insertable
+   streams) is added.
+3. **Managed WebRTC platform** (LiveKit Cloud, Daily, Twilio Video, Agora, Amazon
+   Chime SDK / IVS real-time). Buys option 2 as a service, with per-participant-minute
+   pricing. These are transport vendors, not proctoring vendors, but candidate screen
+   video would still transit a third party (Section 11).
+4. **Periodic screenshots** (grab a frame from the capture track every N seconds and
+   upload a JPEG). Very cheap, needs no TURN, and gives an easy audit trail, but it's
+   not live. A strong **complement** for evidence, not a replacement for live viewing.
+5. **Continuous screen recording upload** (MediaRecorder → S3 for the whole exam).
+   The most storage, bandwidth, and privacy exposure. It contradicts the
+   data-minimization stance (Section 11) and POC #7's rolling-buffer design. Not
+   recommended; apply POC #7's rolling buffer to the screen track instead.
+6. **Status quo: candidate shares their screen into Google Meet.** It works today,
+   but it can't enforce entire-screen, raises no events, has no integration with our
+   alert/review pipeline, and the proctor must watch it continuously.
+7. **Lockdown browser / Safe Exam Browser / native agent.** A different category:
+   it *prevents* rather than *observes*. SEB may make screen viewing partly redundant,
+   or may block `getDisplayMedia` inside its kiosk. This is still Open Question #1.
+
+**Build vs buy (screen viewing only):**
+
+| | P2P WebRTC (build) | Self-hosted SFU | Managed WebRTC | Proctoring vendor |
+|---|---|---|---|---|
+| Latency | Lowest (measured ~25–65 ms localhost) | Low (+1 hop) | Low | Varies |
+| Infra to run | Signaling (have it) + TURN | SFU cluster + TURN | None | None |
+| Multiple viewers per candidate | Poor (mesh, measured) | Good | Good | Good |
+| Server-side recording | No | Yes | Yes | Yes |
+| Who can see screen content | Only the proctor's browser | Our SFU | Vendor | Vendor |
+| Cost | TURN bandwidth only | Servers + ops | Per-minute | Per-exam licence |
+
+**Is remote control necessary? No, and it isn't recommended.**
+- `getDisplayMedia` is view-only by design. A web page can't inject input into the
+  candidate's machine, so remote control would mean installing a **native agent**
+  (remote-desktop style).
+- A native agent is a far larger security, consent, and support burden: an
+  installer, OS accessibility permissions, a remotely controllable endpoint on
+  candidate machines, and liability for anything it does.
+- Nothing in the brief needs the proctor to *operate* the candidate's machine. The
+  things a proctor actually needs to do (warn, ask to close an app, pause the exam)
+  are communication and exam-state actions, not input control.
+- This matches the existing Section 10 position.
+
+### Recommended approach (and what was built)
+
+Option 1, with these specifics:
+- **Enforce entire screen by verification, not by request.** Send the hints, then
+  check `getSettings().displaySurface === "monitor"`. Reject and log `WRONG_SURFACE`
+  otherwise. Treat `unknown` as `SURFACE_UNVERIFIED`, not a pass.
+- **Text-first encoding:** `contentHint = "detail"`,
+  `degradationPreference = "maintain-resolution"`, low frame rate (default 5 fps),
+  a resolution cap of 1920 wide, and a bitrate cap per profile, changeable live via
+  `RTCRtpSender.setParameters`.
+- **Screen events are the main product, not the video.** `SCREEN_SHARE_STOPPED`,
+  `WRONG_SURFACE`, `MULTIPLE_MONITORS`, and `MONITOR_CONFIG_CHANGED` use the same
+  event shape as POC #6 (`event_type` / `detail` / `client_sent_at`), so they drop
+  straight into the `AiEvent` review lifecycle. Live video is what the proctor opens
+  *when* an alert fires, instead of watching everyone all the time. That's the same
+  "reduce proctor load" goal as Section 2.
+- **Signaling over the existing push channel.** It's SSE in the POC and ActionCable
+  in production (Section 7). No new transport.
+
+### Proposed production architecture (not approved — see Decision Log)
+
+```
+qababoardweb exam-hosting page (candidate)            VerifyID-Portal (proctor)
+  ├─ exam iframe (untouched)                            Proctor dashboard
+  └─ Proctoring client                                    ├─ POC #6 alert feed
+       ├─ getDisplayMedia (entire screen, verified)       ├─ screen tiles (on demand / on alert)
+       ├─ screen events ──► ActionCable ──► AiEvent ──►   └─ review lifecycle (Section 13)
+       ├─ WebRTC offer/answer/ICE ──► ActionCable (authz: proctor assigned to session)
+       └─ WebRTC media ══► TURN (coturn/managed, TLS 443) ══► proctor browser
+            (P2P when possible; relayed via TURN otherwise; never decrypted server-side)
+       └─ (later) POC #7 rolling buffer applied to screen track → clip on alert → S3
+```
+
+**SFU trigger conditions.** Move from P2P to an SFU (LiveKit OSS first, since it's
+Apache-2.0 and self-hostable) only if one of these becomes a requirement: more than
+one simultaneous viewer per candidate, server-side screen recording, or a proctor
+download budget exceeded at real cohort sizes.
+
+### Results (automated runs, 2026-09-23)
+
+Setup: Playwright 1.63 driving headless Chromium, M1 Pro, everything on `localhost`.
+There were two sources:
+- **Chromium's fake "screen" device**, a full-motion test pattern that reports
+  `displaySurface: "monitor"`.
+- **An injected synthetic 1920×1080 "exam screen"**: 44 lines of 18px question text,
+  a ticking timer, and the latency probe painted in.
+
+Latency is **glass-to-glass**, measured by decoding a timestamp painted into the
+shared content out of the *received* frames. It covers encode, network, decode, and
+render, but excludes the OS screen-capture step, which the manual matrix measures
+with real capture.
+
+**Bandwidth and latency per profile (1 candidate → 1 proctor):**
+
+| Content | Profile | Upload | Received | FPS | Glass-to-glass (median) |
+|---|---|---|---|---|---|
+| Static exam text | Low (1 fps, 300 kbps, ≤1280) | 131 kbps | 1280×720 | 1 | n/a (1 sample) |
+| Static exam text | Balanced (5 fps, 1 Mbps, ≤1920) | ~100 kbps | 1920×1080 | 5 | **~23–26 ms** |
+| Static exam text | High (15 fps, 2.5 Mbps) | ~145 kbps | 1920×1080 | 15 | ~34 ms |
+| Continuous scrolling | Low | 229 kbps | 1280×720 | 1 | ~150 ms |
+| Continuous scrolling | Balanced | 927 kbps | 1920×1080 | **1** (starved) | **~450 ms** |
+| Continuous scrolling | High | 1.8 Mbps | 1920×1080 | 14 | ~67 ms |
+| Fake device (full motion) | Low / Balanced / High | 49 / 201 / 507 kbps | | 1 / 5 / 15 | |
+
+**Mechanism and robustness:**
+
+| Scenario | Result |
+|---|---|
+| Click "Share" → first decoded frame on proctor (picker auto-accepted) | 346–354 ms; ICE connect ~17 ms on localhost |
+| Wrong surface (monitor required) | Fake device always reports `monitor`, so the rejection path is **not yet exercised with a real window/tab pick** (manual matrix) |
+| Stop via page button → proctor notified | 31–35 ms |
+| Browser "Stop sharing" (track `ended`) → proctor notified | 16 ms |
+| Candidate tab closed → `CANDIDATE_DISCONNECTED` on proctor | 17–20 ms |
+| Proctor page refresh mid-share → video back | 215–222 ms (backlog + auto re-request) |
+| **Signaling server killed mid-share** | **Video kept flowing** (95 KB received in 5 s with the server down). After restart, the stream continued uninterrupted and new events were delivered (after the fix below) |
+| Second proctor viewing the same candidate | Candidate upload roughly doubled (≈200 → 390–440 kbps) and **encode time per frame went from ~4 ms to 37–49 ms**: one encoder per connection |
+| 4 candidates → 1 proctor (Balanced, static) | All live at 5 fps, **185 kbps total download**, decode 1.1–1.7 ms/frame per stream |
+| 6–16 candidates → 1 proctor | **Not valid.** All candidate encoders ran inside one headless browser on one machine and stalled (encode 0.7–12 s per frame) while overall CPU stayed low, which points to headless throttling. This says nothing about proctor-side capacity. Needs candidates on separate machines (manual matrix) |
+| Legibility of received frames | 18px exam text is clearly readable at Low (1280×720) and Balanced (1080p) |
+
+**Problems discovered:**
+
+1. **A signaling reconnect tore down healthy video (fixed).** After a server restart,
+   the proctor's fresh backlog didn't yet include the candidate, so the proctor
+   closed a working peer connection. Fixed by never tearing down a live media
+   connection because of signaling state. **Architecture implication:** the media
+   plane and the signaling plane must be decoupled. An ActionCable reconnect (deploy,
+   Redis blip) must not reset screen viewing.
+2. **Bitrate cap plus maintain-resolution collapses under motion.** At Balanced
+   (1 Mbps), continuous scrolling dropped to 1 fps with ~450 ms latency: the encoder
+   keeps full resolution and starves the frame rate. That's fine for static exam
+   pages, which are the normal case, but production should adapt. Options: raise the
+   cap briefly on sustained motion, or switch `degradationPreference` to `balanced`
+   when the proctor opens the tile full screen.
+3. **Screen content is extremely cheap when static.** 1080p exam text costs about
+   100–150 kbps at *any* profile, because the encoder only sends changes. Bandwidth
+   isn't the constraint for typical exam pages. Motion (scrolling, video) is.
+4. **The P2P mesh doesn't scale per candidate.** Every additional viewer is another
+   full encode on the candidate's (possibly low-end) laptop. One assigned proctor is
+   fine; a supervisor "also watching" needs an SFU.
+5. **SSE hits the HTTP/1.1 limit of 6 connections per origin.** With one SSE stream
+   per tab, a 7th tab of the same origin in one browser profile hangs. This also
+   affects POC #6's design if a proctor opens many tabs. ActionCable (a single
+   multiplexed WebSocket) avoids it; so does HTTP/2.
+6. **Cancel and missing OS permission can't be told apart.** Both surface as
+   `NotAllowedError`. Onboarding (POC #8) has to explain the macOS permission path
+   proactively.
+7. **Chromium's fake capture device feeds only one consumer at a time.** This is a
+   test-harness note: multi-candidate automated runs need an injected synthetic
+   source.
+8. **"Infinite mirror."** When the proctor window is itself on the shared screen,
+   nested copies appear. The latency decoder handles this by using the largest probe.
+   In practice proctor and candidate are different machines.
+9. **A code bug in the POC (fixed):** `pc.getStats(sender)` isn't valid (it takes a
+   track), and the error was silently swallowed, so the candidate's upload metric
+   read zero. It now uses `sender.getStats()`.
+
+**Multiple monitors: what the platform allows:**
+- A single `getDisplayMedia()` call captures **one** surface, and the candidate
+  chooses which. A candidate can share monitor A and use monitor B.
+- Detection is possible in Chromium without a prompt (`screen.isExtended`, plus the
+  `change` event for mid-exam plug-in), and with a prompt we get the count and labels
+  (`getScreenDetails()`). The POC implements both.
+- Blind spots: mirrored displays, a second device (tablet/laptop), and non-Chromium
+  browsers.
+- Capturing all monitors isn't available to BYOD web pages.
+- **Recommendation:** a single-monitor policy, a `MULTIPLE_MONITORS` alert when
+  `isExtended` is true (at share start and on change), and webcam head-turn signals
+  (POC #2) for the off-screen case. Don't try to capture every monitor.
+
+**Privacy and security:**
+- Entire-screen sharing exposes *everything* on that screen: notifications, messages,
+  other apps, and potentially third parties' personal data. Candidates must be told
+  to close other apps and silence notifications. Consent language needs legal review
+  alongside Section 11's biometric and audio items. The page shows "N proctors
+  viewing", on top of the browser's own indicator.
+- **Authorization is the critical gap.** The POC has none: any page can claim to be
+  a proctor and request a screen. In production, view requests must be issued by the
+  server for an authenticated proctor who is assigned to *that* exam session (Pundit
+  policy). The candidate client should accept only server-brokered requests.
+- The P2P + TURN design means screen video is never decrypted on our infrastructure.
+  TURN relays encrypted SRTP. An SFU or managed vendor changes that property, which
+  is a real input to the SFU decision.
+- Nothing is recorded by default. If screen evidence clips are added (POC #7
+  pattern), they need the same short TTL / `SelfieRetentionPurgeJob`-style purge.
+
+**Success criteria:**
+
+| Criterion | Status |
+|---|---|
+| Candidate can share entire screen; proctor sees it live | ✅ (automated, fake monitor source) |
+| Wrong surface (window/tab) rejected | ⏳ implemented, needs real picker (manual) |
+| Proctor notified immediately when sharing stops | ✅ 16–35 ms |
+| Low latency | ✅ ~25 ms glass-to-glass on localhost for static content; real-network figure pending |
+| Modest bandwidth | ✅ ~100–200 kbps for exam text at 1080p |
+| Proctor can read exam text | ✅ at Low and Balanced |
+| Multi-monitor detection | ⏳ implemented, needs a real second monitor (manual) |
+| Survives signaling outage | ✅ (after fix) |
+| Works across browsers / macOS permission flow / real networks | ⏳ manual matrix |
+
+## 28. POC #8 — Practice / Onboarding Simulator (proposal only, awaiting approval)
+
+**Status: not started. Scope below is a proposal for approval, not a decision.**
+
+**Goal:** let a candidate prove their setup works and rehearse the rules *before*
+exam day, without a proctor. That cuts the onboarding load flagged in Section 2,
+especially for Arabic-speaking candidates, and catches POC #5's biggest failure mode
+(the macOS screen permission) in advance.
+
+**Proposed scope:** a guided, bilingual (English/Arabic, RTL) system check plus
+practice run that reuses the validated POC detectors:
+1. Browser/device check: desktop browser, secure context, supported APIs.
+2. Camera: permission, face framing and lighting (POC #1), head-pose calibration
+   (POC #2).
+3. Microphone: permission, level meter, silence baseline (POC #4 VAD).
+4. Screen: entire-screen share with `WRONG_SURFACE` feedback, the macOS
+   Screen-Recording walkthrough, and a single-monitor check (POC #5).
+5. Network: signaling reachability, a short WebRTC loopback, and (later) TURN
+   reachability and bandwidth.
+6. A short practice "mock exam" where the candidate sees live, friendly
+   explanations of what would raise an alert (looking away, phone, talking, stopping
+   the share). Educational, never scored.
+7. A readiness summary (pass/fail per check) that can optionally be POSTed so a
+   proctor sees "ready / needs help" before the exam, following the POC #6 event
+   shape.
+
+**Proposed architecture:** a static page plus a small Node server (same pattern as
+POC #5/#6). It runs a step-by-step checklist state machine, all detection happens
+on-device, strings live in i18n JSON files (`en`, `ar`), and no media leaves the
+device. It's standalone and unwired like every other POC. Out of scope: real exam
+content, auth, persistence, and production integration.
+
+**Proposed success criteria:** a first-time candidate completes it unaided in under
+~5 minutes. Each failure mode (camera denied, screen permission missing, window
+shared instead of screen, second monitor, poor lighting, mic silent) is detected
+and explained with a fix. Arabic RTL renders correctly throughout.
+
 ---
 
 ## Decision Log
@@ -1056,9 +1376,14 @@ that's done — and clear your local `clips/` folder once you're done testing.)*
 | 2026-09-22 | Model/approach for POC #4 (speaking/VAD) | Energy-based VAD, Silero VAD via `@ricky0123/vad-web`, server-side Whisper/STT | Silero VAD via `@ricky0123/vad-web` (ONNX, WASM, on-device); energy-based VAD documented as fallback only | ML-based VAD meaningfully reduces false positives vs. amplitude thresholding, consistent with Section 10; STT already ruled out for privacy/cost (Section 8 finding #4) | Approved — implemented, manually tested, working |
 | 2026-09-23 | Push technology for POC #6 (real-time alerts) | ActionCable (disposable Rails app), Node.js + Server-Sent Events, raw WebSockets (Node `ws`) | Node.js + Server-Sent Events, zero npm dependencies | Validates event schema/review lifecycle/latency without standing up a new Ruby/Rails toolchain just for R&D; ActionCable remains the documented target for the real production integration (Section 7), unchanged by this choice | Approved — implemented, awaiting manual test results |
 | 2026-09-23 | Storage backend for POC #7 (evidence capture) | Real AWS S3, local disk via a small Node server, no storage (client-side download only) | Local disk via a small Node server (`clips/`, gitignored) | Validates the rolling-buffer/upload-on-trigger mechanism without handling real AWS credentials/cost in an R&D prototype; S3 remains the documented target for real production storage (Section 7), unchanged by this choice | Approved — implemented, awaiting manual test results |
+| 2026-09-23 | Screen viewing transport for POC #5 | P2P WebRTC + existing push-channel signaling, self-hosted SFU (LiveKit/mediasoup), managed WebRTC (LiveKit Cloud/Daily/Twilio/Agora/Chime), periodic screenshots, continuous recording, Google Meet | P2P WebRTC, signaling over SSE (stand-in for ActionCable), zero npm deps | Lowest latency, no media servers, screen video never decrypted on our infra; measured ~25 ms glass-to-glass and ~100–200 kbps for exam text. SFU deferred until >1 viewer per candidate or server-side recording is required (measured mesh cost: +1 full encode per viewer) | Proposed — implemented, manual matrix pending |
+| 2026-09-23 | Remote control of candidate machine | View-only, remote control via native agent | View-only | Browser can't provide control; a native agent is a large security/consent/support burden with no requirement driving it (Section 27) | Proposed |
+| 2026-09-23 | Entire-screen enforcement | Trust the `displaySurface` hint, verify `getSettings().displaySurface` after pick, allow any surface | Hint + verify; reject non-`monitor`, flag `unknown` | Hints are ignored by Safari and can be overridden by the user in all browsers; verification is the only real control | Proposed |
+| 2026-09-23 | Multiple monitors | Capture all screens, block if >1, detect + alert | Single-monitor policy + `MULTIPLE_MONITORS` alert (Chromium `isExtended`) | `getAllScreensMedia()` is managed-ChromeOS/IWA only; detection is possible without a prompt in Chromium; blocking contradicts the alert-only stance | Proposed |
 
 ## Experiment Log
 
 | POC | Goal | Setup | Result | Metrics | Problems | Decision |
 |---|---|---|---|---|---|---|
 | 1 | Validate face presence / out-of-frame / multiple-face detection on a normal webcam | Standalone browser page, MediaPipe Face Detector (BlazeFace short-range), WASM, no backend | See Section 18 (pending human test run) | Latency/FPS logged live in-app; see README for how to capture | TBD after manual testing | TBD |
+| 5 | Validate entire-screen share + live proctor viewing | `getDisplayMedia` + P2P WebRTC, Node SSE signaling; Playwright/headless Chromium with fake monitor device and synthetic 1080p exam screen; localhost | Works end to end; survives signaling outage; events reach proctor in 16–35 ms | Glass-to-glass ~23–34 ms (static), ~67 ms (scroll, High); 100–150 kbps static text @1080p; 4 candidates → 185 kbps proctor download | Reconnect tore down live video (fixed); motion + 1 Mbps cap → 1 fps/450 ms; mesh doubles candidate encode per extra viewer; SSE 6-conn limit; N≥6 load not measurable on one machine | P2P + TURN for production; SFU only on trigger; manual matrix next |

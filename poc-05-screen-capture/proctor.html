@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #5 — Proctor Screen Viewer</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>POC #5 — Proctor Screen Viewer</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. Live, view-only screens of every connected candidate,
+    received peer-to-peer over WebRTC. No remote control, no recording. See
+    <a href="README.md">README.md</a> for the test matrix.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>Open <a href="candidate.html" target="_blank">candidate.html</a> in another window (or several, one per simulated candidate) and share a screen there.</li>
+      <li>Each candidate shows up here as a tile; the screen appears automatically once they share. Click a tile to view it full-screen and check whether text is readable.</li>
+      <li><strong>Glass-to-glass latency</strong> is measured automatically when the candidate turns on the latency probe and that window is visible on the shared screen.</li>
+      <li>Screen events (share stopped, wrong surface, second monitor) appear in the log below as they happen.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="status-panel">
+    <div class="controls">
+      <span id="connectionStatus" class="live-status idle">Connecting…</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Candidates connected</span><span id="candVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Screens live</span><span id="liveVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Download (all)</span><span id="downVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="grid-panel">
+    <h2>Candidate screens</h2>
+    <div id="grid" class="screen-grid"></div>
+    <p id="emptyHint" class="hint">No candidates connected yet.</p>
+  </section>
+
+  <section class="log-panel">
+    <h2>Screen events</h2>
+    <p class="hint">Newest first. "Delivery" is candidate → server time for the event message (not video latency).</p>
+    <table class="log">
+      <thead><tr><th>Time</th><th>Candidate</th><th>Event</th><th>Detail</th><th>Delivery</th></tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<template id="tileTemplate">
+  <div class="screen-tile">
+    <div class="tile-head">
+      <span class="tile-name"></span>
+      <span class="tile-state live-status idle">Waiting</span>
+    </div>
+    <div class="tile-video">
+      <video autoplay muted playsinline></video>
+      <div class="tile-placeholder">Not sharing</div>
+    </div>
+    <dl class="tile-stats">
+      <dt>Surface</dt><dd data-k="surface">–</dd>
+      <dt>Resolution</dt><dd data-k="res">–</dd>
+      <dt>FPS</dt><dd data-k="fps">–</dd>
+      <dt>Bitrate</dt><dd data-k="kbps">–</dd>
+      <dt>Network RTT</dt><dd data-k="rtt">–</dd>
+      <dt>Jitter buffer</dt><dd data-k="jitter">–</dd>
+      <dt>Decode</dt><dd data-k="decode">–</dd>
+      <dt>Freezes / lost</dt><dd data-k="loss">–</dd>
+      <dt>Glass-to-glass</dt><dd data-k="g2g">–</dd>
+      <dt>Monitors</dt><dd data-k="monitors">–</dd>
+    </dl>
+  </div>
+</template>
+
+<script src="proctor.js"></script>
+</body>
+</html>

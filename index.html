@@ -73,13 +73,18 @@
       <p class="desc">Silero VAD (on-device). Detects when the candidate is speaking versus silent — no transcription, no audio ever recorded.</p>
     </li>
     <li>
+      <a href="poc-05-screen-capture/candidate.html">POC #5 — Screen Capture / Live Proctor Viewing</a>
+      <span class="status pending">manual test pending</span>
+      <p class="desc">getDisplayMedia + peer-to-peer WebRTC. Candidate shares their entire screen (window/tab picks rejected); proctor views it live with latency/bitrate stats and share-stopped / second-monitor alerts. Needs <code>node server.js</code> — see its README.</p>
+    </li>
+    <li>
       <a href="poc-06-realtime-alerts/candidate.html">POC #6 — Real-Time Events → Proctor Dashboard</a>
-      <span class="status pending">awaiting test pass</span>
+      <span class="status done">implemented, tested</span>
       <p class="desc">Node.js + Server-Sent Events. Simulated alerts flow from a candidate page to a live proctor dashboard with an acknowledge/confirm/dismiss review workflow. Needs <code>node server.js</code> — see its README.</p>
     </li>
     <li>
       <a href="poc-07-evidence-capture/">POC #7 — Evidence Rolling-Buffer Recording</a>
-      <span class="status pending">awaiting test pass</span>
+      <span class="status done">implemented, tested</span>
       <p class="desc">MediaRecorder rolling buffer. Saves a short local video clip (before/after a trigger) instead of recording continuously. Needs <code>node server.js</code> — saves real video to local disk, see its README first.</p>
     </li>
   </ul>

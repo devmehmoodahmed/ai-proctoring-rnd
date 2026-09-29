@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POC #5 — Candidate Screen Share</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<!-- Latency probe: encodes Date.now() as coloured/black-and-white cells. The proctor
+     page finds and decodes it in the received video to measure true glass-to-glass
+     latency (capture + encode + network + decode + render). See README.md. -->
+<canvas id="latencyProbe" class="latency-probe" hidden></canvas>
+
+<header>
+  <h1>POC #5 — Candidate Screen Share</h1>
+  <p class="subtitle">
+    Standalone R&amp;D prototype. Shares your screen live with a proctor over WebRTC
+    (peer-to-peer). Nothing is recorded or stored anywhere — the server only relays
+    connection setup messages. See <a href="README.md">README.md</a> for the test matrix.
+  </p>
+
+  <details class="info-panel" open>
+    <summary>What this does &amp; how to test it</summary>
+    <ul>
+      <li>Open <a href="proctor.html" target="_blank">proctor.html</a> in another window first — that's where your screen shows up.</li>
+      <li>Click <strong>Share entire screen</strong> and pick a whole screen (not a window or tab). Picking a window/tab is rejected, on purpose.</li>
+      <li>Stop sharing using the browser's own "Stop sharing" bar — the proctor should be told immediately.</li>
+      <li>Turn on the <strong>latency probe</strong> and keep this window visible on the screen you're sharing — the proctor page reads it to measure real end-to-end delay.</li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <section class="status-panel">
+    <div class="controls">
+      <label class="inline">Name <input type="text" id="cfgName" value="Candidate A" /></label>
+      <button id="shareBtn" class="primary">Share entire screen</button>
+      <button id="stopBtn" disabled>Stop sharing</button>
+      <span id="shareStatus" class="live-status idle">Not sharing</span>
+    </div>
+
+    <div class="config-row">
+      <label>Quality profile
+        <select id="cfgProfile">
+          <option value="low">Low — 1 fps, 300 kbps</option>
+          <option value="balanced" selected>Balanced — 5 fps, 1 Mbps</option>
+          <option value="high">High — 15 fps, 2.5 Mbps</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="cfgRequireMonitor" checked /> Require entire screen</label>
+      <label><input type="checkbox" id="cfgProbe" /> Latency probe</label>
+      <button id="screensBtn">Detect monitors (asks permission)</button>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Signaling</span><span id="sigVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Proctors viewing</span><span id="viewersVal" class="metric-val">0</span></div>
+      <div class="metric"><span class="metric-label">Surface shared</span><span id="surfaceVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Captured resolution</span><span id="resVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Monitors</span><span id="monitorsVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Upload (all viewers)</span><span id="upVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Sent fps</span><span id="fpsVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Encode / frame</span><span id="encVal" class="metric-val">–</span></div>
+      <div class="metric"><span class="metric-label">Quality limited by</span><span id="limitVal" class="metric-val">–</span></div>
+    </div>
+  </section>
+
+  <section class="preview-panel">
+    <h2>What the proctor sees</h2>
+    <p class="hint">Local preview of the captured surface. A browser-level "sharing" indicator is also always shown — this page cannot hide it.</p>
+    <video id="preview" autoplay muted playsinline></video>
+  </section>
+
+  <section class="log-panel">
+    <h2>Screen events</h2>
+    <p class="hint">Also sent to every connected proctor. Same shape as POC #6 events (<code>event_type</code> / <code>detail</code>).</p>
+    <table class="log">
+      <thead><tr><th>Time</th><th>Event</th><th>Detail</th></tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="candidate.js"></script>
+</body>
+</html>
