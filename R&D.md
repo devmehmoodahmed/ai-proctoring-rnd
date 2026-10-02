@@ -1,14 +1,18 @@
 # AI Proctoring R&D
 
-Status: **POC #1–#7 implemented; POC #8 not started (proposal in Section 28, awaiting
-approval).** POC #1–#4, #6 and #7 have been manually tested by the team. POC #5
-(screen capture, Section 27) was implemented and verified with automated browser
-runs on 2026-09-23; its manual test matrix (real picker, multi-monitor, macOS
-permission, other browsers, real network) is still pending. The written
-test-matrix results for POC #1–#4/#6 are not yet recorded here (Section 18 and the
-Results subsections under Section 22–25). Record them before treating those POCs as
-fully validated. **POC #7 saves real recorded video to local disk; see its README
-before running it.**
+Status: **All eight POCs are implemented.** POC #1–#4, #6 and #7 have been manually
+tested by the team. POC #5 (screen capture, Section 27) was verified with automated
+browser runs on 2026-09-23; its manual test matrix (real picker, multi-monitor, macOS
+permission, other browsers, real network) is still pending. POC #8 (practice /
+onboarding simulator, Section 28) was implemented on 2026-09-29 and verified on
+2026-09-30 with 29 unit tests and an 18-scenario automated browser suite, all passing
+(Section 28.10). Its manual matrix (real candidates, especially Arabic speakers) is
+still pending, and it reopened decision D2 on face counting (finding F6). The written test-matrix
+results for POC #1–#4/#6 are not yet recorded here (Section 18 and the Results
+subsections under Section 22–25). Record them before treating those POCs as fully
+validated. **POC #7 saves real recorded video to local disk; see its README before
+running it.** **POC #8 found that MediaPipe ≥ 1.0.0 sends usage telemetry to Google,
+which affects POC #1–#3 as well (Section 28.10, finding F1).**
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -73,7 +77,7 @@ See the original R&D brief (sections A–14 as provided) for the full list. Summ
 | Screen capture / viewing | P2 | POC #5 (implemented — Section 27) |
 | Real-time proctor alerting | P0 (infra) | POC #6 |
 | Rolling-buffer evidence capture | P1 | POC #7 |
-| Practice/onboarding simulator | P2 | POC #8 |
+| Practice/onboarding simulator | P2 | POC #8 (implemented — Section 28) |
 
 ## 4. Non-Functional Requirements
 
@@ -476,6 +480,10 @@ flags. Every alert must carry confidence and a plain-language reason
 | Screen-view request from an unauthorized party | Medium if unaddressed | High | Server-brokered view requests only, scoped to the proctor assigned to that session (Pundit) — POC #5 has no auth by design |
 | Some candidate networks can't connect P2P | Medium | Medium | TURN (TLS/443) required in production — not in POC #5 |
 | Entire-screen share exposes unrelated personal data (notifications, messages) | Medium | Medium | Candidate instructions + consent review; no recording by default; P2P keeps video off our servers |
+| Third-party libraries send data we didn't know about (found: MediaPipe ≥ 1.0.0 usage telemetry) | Confirmed | Medium-High (privacy claims made to candidates become untrue) | Pin versions; enforce a CSP `connect-src` allow-list in every candidate page; network-audit tests that run longer than any batching interval (Section 28.10, F1) |
+| Candidate-facing exam rules are wrong, invented, or differ between languages | Medium without controls | High | Rules only from versioned, reviewed content files; no runtime LLM; an EN/AR parity test (Section 28) |
+| Arabic onboarding text is inaccurate or in the wrong register | Medium (machine-drafted today) | High for the Arabic cohort | Qualified bilingual review before any candidate sees it; `translation_status` flag in content (Section 28) |
+| A second person in view is flagged late because the face model misses them intermittently | Confirmed on a test video (Face Landmarker: second face in 84% of frames) | Medium-High (a helper next to the candidate goes unflagged for seconds) | Use BlazeFace (100% on the same video) for face count; confirm on 720p webcams (Section 28.10, F6; D2 = Revisit) |
 
 ## 15. Recommended Architecture
 
@@ -496,7 +504,7 @@ Decision Log for status.
 | 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual matrix pending |
 | 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; written results pending |
 | 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26 |
-| 8 | Practice/onboarding simulator | Not started — proposal in Section 28, awaiting approval |
+| 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, manual matrix (real candidates) pending |
 
 ## 17. POC #1
 
@@ -574,6 +582,21 @@ those sections record the current best proposal, not an approved architecture.
    stops mid-exam? (Alert-only is consistent with the Automatic Exam Pause decision;
    gating exam *start* is a separate product decision.)
 9. Who hosts TURN in production — self-hosted coturn or a managed TURN service?
+10. Arabic digits: Latin (`1,234`) or Arabic-Indic (`١٬٢٣٤`) in candidate-facing
+    text? POC #8 pins Latin (`ar-u-nu-latn`), assuming that matches the exam engine.
+    The target countries and the exam engine's own convention decide this.
+11. Who owns and approves the candidate-facing exam rules (allowed/prohibited items,
+    room, breaks, ID, accommodations) and their Arabic translation? POC #8's rules are
+    placeholders until someone does.
+12. Are MediaPipe's usage telemetry (Section 28.10, F1) and the other third-party
+    requests (jsDelivr, Google model storage) acceptable to legal/compliance, or must
+    production self-host everything?
+13. Religious head coverings: what do proctors do today about ears/headphones checks
+    for candidates wearing hijab? The draft rules avoid "ears must be visible", but the
+    real policy needs an explicit, respectful procedure.
+14. Should candidates see live nudges during the *real* exam, or only in practice?
+    POC #8 assumes yes (Section 4 already plans a "please face the camera" UX), but it
+    affects anxiety and the "teaching evasion" risk.
 
 ## 21. Next Steps
 
@@ -1323,42 +1346,355 @@ with real capture.
 | Survives signaling outage | ✅ (after fix) |
 | Works across browsers / macOS permission flow / real networks | ⏳ manual matrix |
 
-## 28. POC #8 — Practice / Onboarding Simulator (proposal only, awaiting approval)
+## 28. POC #8 — Practice / Onboarding Simulator
 
-**Status: not started. Scope below is a proposal for approval, not a decision.**
+**Status: planned 2026-09-29 (this section, written before implementation).
+Implementation and results are recorded in Section 28.9 onward.**
 
-**Goal:** let a candidate prove their setup works and rehearse the rules *before*
-exam day, without a proctor. That cuts the onboarding load flagged in Section 2,
-especially for Arabic-speaking candidates, and catches POC #5's biggest failure mode
-(the macOS screen permission) in advance.
+**Location:** [poc-08-onboarding-simulator/](poc-08-onboarding-simulator/).
 
-**Proposed scope:** a guided, bilingual (English/Arabic, RTL) system check plus
-practice run that reuses the validated POC detectors:
-1. Browser/device check: desktop browser, secure context, supported APIs.
-2. Camera: permission, face framing and lighting (POC #1), head-pose calibration
-   (POC #2).
-3. Microphone: permission, level meter, silence baseline (POC #4 VAD).
-4. Screen: entire-screen share with `WRONG_SURFACE` feedback, the macOS
-   Screen-Recording walkthrough, and a single-monitor check (POC #5).
-5. Network: signaling reachability, a short WebRTC loopback, and (later) TURN
-   reachability and bandwidth.
-6. A short practice "mock exam" where the candidate sees live, friendly
-   explanations of what would raise an alert (looking away, phone, talking, stopping
-   the share). Educational, never scored.
-7. A readiness summary (pass/fail per check) that can optionally be POSTed so a
-   proctor sees "ready / needs help" before the exam, following the POC #6 event
-   shape.
+**Question:** Can a candidate, unaided and before exam day:
+1. prove their browser, camera, microphone and screen sharing work;
+2. learn the exam rules from **approved, deterministic** content in English or Arabic;
+3. experience what the AI flags and what happens next (a person reviews it)?
 
-**Proposed architecture:** a static page plus a small Node server (same pattern as
-POC #5/#6). It runs a step-by-step checklist state machine, all detection happens
-on-device, strings live in i18n JSON files (`en`, `ar`), and no media leaves the
-device. It's standalone and unwired like every other POC. Out of scope: real exam
-content, auth, persistence, and production integration.
+If so, proctors no longer have to walk each candidate through setup live on Google
+Meet. That's the onboarding load in Section 2, and it's heaviest for Arabic-speaking
+candidates.
 
-**Proposed success criteria:** a first-time candidate completes it unaided in under
-~5 minutes. Each failure mode (camera denied, screen permission missing, window
-shared instead of screen, second monitor, poor lighting, mic silent) is detected
-and explained with a fix. Arabic RTL renders correctly throughout.
+### 28.1 What POC #1–#7 already give us
+
+| POC | Validated capability | How POC #8 reuses it | Change needed |
+|---|---|---|---|
+| #1 | Face count / out-of-frame / too-far, 1.5 s raise / 0.8 s clear persistence | Camera-setup guidance and the `FACE_MISSING` / `OUT_OF_FRAME` / `MULTIPLE_FACES` nudges in the mock exam. Same thresholds | Applied to the Face Landmarker's box instead of BlazeFace's, so one face model runs instead of two (decision D2) |
+| #2 | Face Landmarker + facial transformation matrix → yaw/pitch/roll; calibration; 20°/15° thresholds | `LOOKING_AWAY` in the mock exam | Calibration averages about 2 s of samples and checks they're stable. POC #2 used a single-frame snapshot, which was a known limitation |
+| #3 | EfficientDet-Lite0 `cell phone` class | Optional "show a phone" demo in the mock exam | Loaded only when needed and throttled to ~4 Hz so it doesn't starve the face model |
+| #4 | Silero VAD (`vad-web` 0.0.31), 0.5/0.35, 400 ms / 1400 ms, the CDN asset-path fix | Microphone check (quiet baseline, then read a sentence aloud) and the speaking nudge | The page opens the mic itself, so it can report *which* error happened, and hands the stream to VAD (`getStream`) |
+| #5 | `getDisplayMedia` hints, then verifying `displaySurface === "monitor"`; `screen.isExtended`; `NotAllowedError` is ambiguous | Screen-share check with `WRONG_SURFACE` feedback and a macOS walkthrough | Nothing is transmitted: the share is shown locally, then stopped |
+| #6 | Event shape (`event_type`, `detail`, `confidence`, `session_id`, `client_sent_at`); `ALERTED → ACKNOWLEDGED → …` lifecycle | The readiness report uses the same shape. The mock exam shows the candidate an example proctor alert card | None |
+| #7 | Rolling-buffer evidence clips | **Not reused on purpose.** Practice records nothing | — |
+
+New in POC #8 (not covered by any earlier POC): a lighting heuristic, "move
+left / closer / tilt" framing hints, the step state machine, the bilingual content
+model, and resuming after a browser relaunch.
+
+### 28.2 Research: how onboarding is done elsewhere
+
+- **Pearson OnVUE** runs a separate *system test* on the same computer and location
+  as exam day. It then re-checks at check-in, where the candidate takes a face photo,
+  photographs the ID front and back, takes four workspace photos (front, back, left,
+  right), and must unplug extra monitors. There's an exam tutorial before the exam
+  starts ([Pearson VUE online testing guide](https://wwwhtbprolpearsonvuehtbprolcom-s.evpn.library.nenu.edu.cn/content/dam/VUE/vue/en/documents/onvue/pearson-vue-online-testing-guide-en.pdf),
+  [NES OnVUE tips](https://docs.nesinc.com/COMMON/TipsOnTakingAnOnVUEExam.pdf),
+  [APA OnVUE FAQ](https://payroll.org/education-certification/certification/onvue/)).
+- **Honorlock** offers an unlimited-use practice test that covers the system check
+  (webcam, mic, internet), authentication and a practice room scan. The room scan is
+  360°, including the work surface and what's behind the computer
+  ([Univ. of Iowa guide](https://distance.uiowa.edu/exams/honorlock-students),
+  [UT Dallas FAQ](https://ets.utdallas.edu/testing-center/honorlock/honorlock-faqs-and-instructions-for-students-3)).
+- **Anxiety:** vendors report that anxiety is highest on a candidate's *first*
+  remote-proctored exam and falls on later ones, and that worry about technology is
+  a main driver ([Honorlock survey](https://honorlock.com/blog/student-survey-to-learn-how-to-reduce-test-anxiety/),
+  [ProctorExam poster](https://proctorexam.com/wp-content/uploads/2020/02/OP4RE_A0-Anxiety-Poster-vFinal.pdf)).
+  These are vendor sources, so treat them as a direction, not independent evidence.
+  Still, a practice run is the cheapest way to make exam day a candidate's "second"
+  run.
+- **Runtime LLMs and policy.** In *Moffatt v. Air Canada* (BC Civil Resolution
+  Tribunal, Feb 2024), an airline's chatbot invented a bereavement-refund rule and
+  the airline was held liable for it. The tribunal said it "makes no difference
+  whether the information comes from a static page or a chatbot"
+  ([AI Business](https://aibusiness.com/nlp/air-canada-held-responsible-for-chatbot-s-hallucinations-)).
+  An exam board that lets an LLM paraphrase exam rules takes on the same risk, and
+  would be taking it in two languages.
+- **RTL:** set `dir`/`lang` on `<html>`, use CSS logical properties
+  (`margin-inline-start` and so on), and isolate mixed-direction runs such as event
+  codes and numbers inside Arabic text with `<bdi>`
+  ([W3C bidi techniques](https://www.w3.org/TR/2009/WD-i18n-html-tech-bidi-20090714/),
+  [CSS Writing Modes 3](https://www.w3.org/TR/css-writing-modes-3/)).
+- **Arabic digits are a product decision, not a default.** Measured in Node 22 ICU:
+  `ar` and `ar-AE` format `1234.5` as `1,234.5`, but `ar-SA` and `ar-EG` give
+  `١٬٢٣٤٫٥`. Browsers have changed these defaults between versions too
+  ([Apple forum](https://developer.apple.com/forums/thread/773692)). POC #8 pins the
+  numbering system explicitly in the content file.
+
+### 28.3 Approaches compared
+
+| Approach | What it is | Strengths | Weaknesses | Risk of wrong policy | Verdict |
+|---|---|---|---|---|---|
+| **A. Deterministic workflow** | Checklist state machine: each step has a pass condition, a fix hint and a skip | Predictable, auditable, easy to translate and review, unit-testable, and gives the same answer every time in both languages | Passive. Reading rules isn't the same as understanding what triggers an alert | None: the text is exactly what was approved | **Backbone** |
+| **B. Interactive tutorial** | The candidate *does* things and sees live detector feedback: "turn your head", "say this sentence" | Teaches by doing and reuses POC #1–#5 directly. Problems show up in context ("your room is too dark") | Heavier client (2–3 models plus VAD). A false positive during practice can confuse | Low, as long as the copy is deterministic | **Embed in A's steps** |
+| **C. AI assistant (LLM chat)** | Free-text Q&A, possibly multilingual | Flexible, handles unexpected questions, natural in Arabic | Can invent or soften rules (the Air Canada precedent). Answers may differ between EN and AR. Needs a server and an LLM vendor, so candidate text goes to a third party. Prompt injection. Can't be tested exhaustively. Latency and per-candidate cost | **High** | **Not at runtime.** Possibly later as retrieval-only FAQ search that refuses and escalates when unsure. AI is useful at *authoring* time, for drafting translations a human then reviews |
+| **D. Guided mock exam** | A short fake exam with a timer while the detectors run | Closest to exam day, reduces first-time anxiety, and shows nudges and alerts in a realistic setting | Needs sample content. Must be clearly marked *practice* and never scored | Low, if the questions are about the process rather than exam content | **Final step** |
+| **E. Hybrid (A + B + D)** | A as the spine, B inside the setup steps, D at the end, all copy from versioned content files | Combines the strengths above and keeps policy text deterministic | The most code of the non-LLM options | Low | **Recommended** |
+
+### 28.4 Recommended architecture (what POC #8 builds)
+
+```
+poc-08-onboarding-simulator/  (static files; python3 -m http.server)
+  content/en.json, content/ar.json   ← the ONLY source of candidate-facing text:
+      meta (content_version, policy_status, dir, number locale), ui strings,
+      step copy, rules[], nudges{}, proctor_alerts{}, error fixes, practice questions
+  logic.js    ← pure, unit-tested: step machine, persistence/hysteresis, framing
+                and lighting classification, pose + calibration, readiness, report
+  media.js    ← browser wrappers: camera, Face Landmarker, Object Detector, lighting
+                sampler, mic + level meter + VAD, getDisplayMedia check
+  app.js      ← renders steps from content, wires media → logic → UI
+  tests/      ← node --test (logic + content parity) and an optional Playwright e2e
+
+Candidate browser (all on-device)                          nothing is uploaded
+  Welcome → Device → Camera → Microphone → Screen → Rules → Practice → Summary
+                 │          │           │                       │
+      Face Landmarker   Silero VAD   getDisplayMedia     + Object Detector (lazy)
+                                                                     │
+                     readiness report (JSON, POC #6 event shape, no media) ──► download
+                     (production: POST to the proctoring backend → dashboard "ready / needs help")
+```
+
+### 28.5 Decisions made for this POC
+
+| # | Decision | Why |
+|---|---|---|
+| D1 | Hybrid (E). All candidate-facing text comes from versioned content files. **No runtime LLM** | Exam rules must be exactly what the exam owner approved, identical in both languages (Section 28.2) |
+| D2 | One Face Landmarker (`numFaces: 2`) provides count, box *and* pose, replacing POC #1's separate Face Detector | Fewer models to run on low-end laptops. Answers the consolidation question left open in Section 22. Multiple-face detection has to be re-validated on this model (test: two-person video). **Re-validation failed; see 28.10 F6. Now "Revisit"** |
+| D3 | Practice records and uploads nothing. The only output is a JSON readiness report (statuses and error codes, no images or audio) in the POC #6 event shape | Data minimisation (Section 11). No new consent surface is needed for a practice run |
+| D4 | Every technical check can be skipped and is then recorded as "needs help". Only the rules acknowledgement is required | The Degradable NFR (Section 4): never lock a candidate out; hand them to a human |
+| D5 | The candidate sees plain-language **nudges only**, never angles, confidence scores or thresholds | Showing numbers would teach candidates how to stay under the thresholds and adds anxiety. The proctor side keeps the numbers |
+| D6 | Setup guidance uses a *stricter* "ideal framing" band than the exam alert thresholds | Setup should aim for the middle of the acceptable range, so that small movements during the exam don't trigger alerts |
+| D7 | English and Arabic in the POC. The Arabic copy is **drafted by the assistant** and marked `machine-drafted, needs review` in `meta` | Tests the RTL/i18n mechanics now. Real candidates need text reviewed by a qualified bilingual reviewer (risk R1) |
+| D8 | Rules text is **placeholder policy** (`policy_status: "DRAFT — not approved"`) and is shown as such in the UI | We don't have the exam owner's actual rules. Inventing them silently would be the exact problem D1 exists to prevent |
+| D9 | The number locale is pinned to Latin digits for Arabic (`ar-u-nu-latn`) | Same digits as the (black-box) exam engine most likely shows. Configurable in `meta`. Open Question #10 |
+| D10 | Static page, no Node server | Nothing needs to be sent anywhere in the POC. Integrating with the backend is a documented next step |
+
+### 28.6 Scope
+
+**In:**
+- EN/AR with RTL, and a language switch at any point.
+- Device/browser check.
+- Camera: permission errors mapped to fixes; framing and lighting guidance with
+  direction hints; a 3 s "hold good position" check that doubles as pose calibration.
+- Microphone: permission errors; level meter; quiet baseline; read a sentence aloud.
+- Screen: entire-screen share verified; wrong surface, cancel/permission and second
+  monitor explained; the macOS walkthrough.
+- Rules: allowed/prohibited items and behaviour rules; an environment self-checklist
+  (desk, room, ID ready, monitors, notifications); an optional timed room-scan
+  practice; a system FAQ; a required acknowledgement.
+- Practice: 3 process questions, a timer, live nudges, "try it" challenges, and an
+  example proctor alert with the "a person reviews this" explanation.
+- Summary: ready / ready with warnings / needs help, fix hints, JSON report.
+- Progress saved in `localStorage`, so the macOS "quit and reopen" doesn't lose it.
+
+**Out:** real exam content; scoring; ID capture or verification (VerifyID-Portal
+already does this, and the practice only explains it); a room-scan *analysis*; a
+network/TURN test (no TURN exists yet, Open Question #9); sending the report to a
+server; auth; accommodations handling; a proctor-side view; any LLM.
+
+### 28.7 Risks
+
+| # | Risk | Mitigation |
+|---|---|---|
+| R1 | Arabic copy is machine-drafted, with possible errors or an inappropriate register for formal exam instructions | Marked in `meta` and in the UI. A qualified reviewer must approve before candidates see it. The content-parity test guarantees both languages have the same rules and placeholders |
+| R2 | Placeholder rules are mistaken for real policy | `DRAFT` banner in the UI, driven by `meta.policy_status` |
+| R3 | A detector misfires during practice ("it says I'm looking away but I'm not") and *raises* anxiety | Calm nudge copy. An explicit "brief moments are normal; a person reviews every alert" message. Practice-only extra explanation |
+| R4 | Practice teaches candidates how to evade detection | No numbers shown (D5). Nudges only say what to fix, not where the threshold is |
+| R5 | Setup passes in practice but the environment differs on exam day (different room or device) | Copy says to use the same computer and room, like OnVUE. Production should re-run the quick checks at exam start |
+| R6 | Models load from public CDNs (jsDelivr, storage.googleapis.com). Corporate or national networks may block them | The device step shows a "couldn't load" failure. Production should self-host the model and WASM files |
+| R7 | Three inference engines in one tab overload low-end laptops | Phone detector loaded lazily and throttled. FPS measured per step (28.10) |
+| R8 | `NotAllowedError` can't be told apart from Cancel vs missing macOS permission (POC #5 finding) | Show both fixes. On macOS, show the permission path before the first attempt |
+
+### 28.8 Success criteria and test plan
+
+| Criterion | How it's tested |
+|---|---|
+| Happy path completes and yields "ready", in EN and AR | Playwright e2e, fake camera (real face video) + fake mic (TTS speech) + fake screen |
+| Each failure mode is detected and explained with a fix: camera denied, camera busy, no face, two faces, too dark, mic silent, screen cancelled/denied (macOS walkthrough shown), window shared instead of screen, second monitor | e2e with Chromium fake devices plus stubbed `getUserMedia`/`getDisplayMedia`/`screen.isExtended` |
+| The mock exam shows the nudge *and* the proctor-alert explanation for face missing, speaking, and looking away | e2e (face video that pans away; speech in the audio file). Looking-away and phone need a real person (manual) |
+| RTL layout is correct; no untranslated strings; same rules in EN and AR | Content-parity unit test plus screenshots of every step in AR |
+| Nothing is uploaded | e2e records every network request and asserts that only static assets are fetched (GETs) |
+| Survives reload / browser relaunch mid-flow | e2e reloads at the screen step and expects a resume at the same step |
+| Readiness report is accepted by POC #6's `POST /events` unchanged | e2e posts the downloaded report to a running POC #6 server |
+| Runs in real time with face + VAD (+ phone) | FPS/inference time recorded per step (headless CPU is a lower bound; laptop numbers in the manual matrix) |
+| A first-time candidate finishes unaided in < ~5 minutes | **Manual only**: needs real people, including Arabic speakers |
+
+### 28.9 What was implemented
+
+A static page ([poc-08-onboarding-simulator/](poc-08-onboarding-simulator/), run
+instructions in its README) with eight steps. It matches the plan above with no
+scope added:
+
+| Step | What the candidate does | What is checked / explained | Failure → fix shown |
+|---|---|---|---|
+| Welcome | Picks EN/AR (switchable at any time) | What the practice is, ~5 min, privacy (nothing recorded or sent), what they need | — |
+| Computer & browser | Nothing (automatic) | Secure context, desktop (not phone/tablet), Chromium vs other, camera/screen/WebRTC/WASM APIs, screen size; downloads and warms up the face model | Each failed or warned item has its own fix; "couldn't download" names the network as the likely cause |
+| Camera | Allows the camera, then sits in the guide oval | Face count, framing with direction hints, distance, lighting (dark / backlit / too bright); passes after 3 s held in position, and that hold *is* the head-pose calibration | Blocked, not found, in use by another app, unsupported, model failed; "more than one person"; "move left / closer / tilt up"; a lighting-only issue passes with a warning |
+| Microphone | Stays quiet for 5 s, then reads a sentence aloud | Level meter; Silero VAD hears nothing during the quiet phase and ≥ 0.8 s of speech in the speaking phase | Blocked / not found / in use; "we heard talking while you were quiet" (TV, other person); "we couldn't hear you" with tips, plus "seems muted" when the level is flat |
+| Screen | Shares the entire screen; a local preview only | `displaySurface === "monitor"`, `screen.isExtended` | Cancel/permission (with the macOS walkthrough, highlighted on Mac), window or tab shared, second monitor, unverifiable surface, unsupported browser |
+| Rules | Reads the rules, ticks the room checklist, can practise a 20 s room scan, acknowledges | Draft rules as data: 2 allowed, 4 prohibited, 5 behaviour rules, each prohibited/behaviour rule with "if this is noticed: …"; ID-check tips; system FAQ | Checklist incomplete → hint; "I can't do one of these" → passes with a warning |
+| Practice exam | Answers 3 process questions within 3:00 while trying the actions ("look away", "leave the view", "say something", "show a phone") | Exam-time thresholds from POC #1–#4. On each alert: the in-exam nudge, the "try it" item ticks, and an **example proctor alert** (code, plain-language label, duration, `ALERTED · awaiting proctor review`) with "a person reviews it; the system never decides" | Not scored; answers get explanations |
+| Summary | Downloads the report, or starts again | Ready / ready with warnings / needs help; per-check result with its fix text; camera and mic switched off | — |
+
+**Architecture as built.** It's the one planned in 28.4. `logic.js` is pure and
+unit-tested, `media.js` wraps the browser APIs, and `app.js` renders from the content
+files. No text is hard-coded in the JS. The one addition is a CSP `connect-src`
+allow-list in `index.html` (finding F1).
+
+**Technologies:** plain HTML/CSS/ES modules, no build step, no npm dependencies (same
+as POC #1–#7). MediaPipe Tasks Vision **1.0.1, pinned** (Face Landmarker float16,
+EfficientDet-Lite0) with WASM and a GPU delegate. Silero VAD v5 via
+`@ricky0123/vad-web` 0.0.31 and onnxruntime-web 1.22.0. `getUserMedia`,
+`getDisplayMedia`, the Window Management `screen.isExtended`, Web Audio `AnalyserNode`,
+and `Intl.NumberFormat` with a pinned numbering system. Tests use `node:test` (zero
+dependencies) and Playwright 1.63 with headless Chromium, the Xiph "derf" test
+sequences, and macOS TTS (`say`: Samantha for English, Majed for Arabic).
+
+**Size:** `logic.js` 404 lines, `media.js` 431, `app.js` 1,264 (mostly DOM
+construction for eight steps), 458 lines of content per language, and 1,103 lines of
+tests and fixture tooling.
+
+### 28.10 Test results and findings
+
+**Automated runs (2026-09-29/30), headless Chromium 153 on an Apple-silicon Mac,
+localhost, models fetched live from the CDNs.** 29 unit tests pass (logic + EN/AR
+content parity, < 1 s). The e2e suite has 18 scenarios, and the final full run on
+2026-09-30 passed 18/18. Earlier runs failed three times, and each failure led to a
+finding below (F2, F6, F7). One more run was discarded because the Mac slept with its
+lid closed partway through, which froze the headless browsers for minutes at a time.
+Run long suites under `caffeinate`.
+
+| Criterion (28.8) | Scenario(s) | Result |
+|---|---|---|
+| Happy path → "ready", EN and AR | `happy_en`, `happy_ar` | **Pass.** 62–69 s end to end with fake devices. Practice gets 3/3 answers, the speech nudge and the example `SPEECH_DETECTED` alert card |
+| Failure modes detected and explained | `two_faces`, `too_dark`, `camera_denied`, `camera_busy`, `mic_silent`, `screen_wrong_surface`, `screen_denied_mac`, `screen_denied_windows`, `screen_multi_monitor`, `mobile_device`, `cdn_blocked` | **Pass.** Each shows its specific fix text. Too dark passes with a `TOO_DARK` warning (by design, D4). The macOS walkthrough is highlighted on Mac only. "Skip" records `SKIPPED_BY_CANDIDATE` |
+| Mock-exam nudge + proctor-alert explanation | `face_missing_in_practice`, `two_faces_in_practice`, speech inside the happy paths | **Pass** for face missing, multiple faces and speaking. Looking away and phone need a real person (manual matrix) |
+| RTL correct; parity; no missing strings | `happy_ar` + content tests | **Pass.** `dir=rtl`, first step rightmost, no missing content keys, same rule IDs and placeholders in both languages. Screenshots checked by eye |
+| Nothing uploaded | every scenario's network audit + `telemetry_blocked` | **Pass.** GET requests only, to `127.0.0.1`, `cdn.jsdelivr.net` and `storage.googleapis.com`. The one attempted POST (MediaPipe telemetry, F1) is blocked by the CSP |
+| Survives reload mid-flow | `happy_en` reloads at the screen step | **Pass.** It resumes at Screen with device/camera/mic results kept |
+| Report accepted by POC #6 unchanged | `report_into_poc6` | **Pass** (HTTP 201, stored as `READINESS_REPORT`). POC #6 then stores it as `ALERTED`, which F9 addresses |
+| Real-time with face + VAD + phone | `?dev=1` metrics in the happy paths | Face Landmarker **~11 fps, ~50 ms per frame** (GPU delegate). Phone detector ~220 ms per call, one call every ~880–900 ms (the duty cycle, F4). Headless numbers; laptop numbers are in the manual matrix |
+| First-time candidate unaided in < ~5 min | — | **Not tested yet: manual only** |
+
+**Measured load times** (cold cache per scenario, since each launch is a fresh
+browser profile): face model 0.1–7.9 s, phone model 7.8–15.5 s, VAD 0.3–5.0 s, and
+the first-inference warm-up ~4.0–4.6 s per vision model.
+
+**Findings**
+
+- **F1 — MediaPipe tasks-vision ≥ 1.0.0 sends usage telemetry to Google.** It batches
+  task type, version, call counts and latency, and every 60 s POSTs them as
+  protobuf to `odml.pa.googleapis.com/v1/log` with an embedded API key, the page
+  origin and the user agent. There are no images. There's no option to turn it off,
+  and the 0.10.x versions don't have it. POC #8 blocks it with a CSP `connect-src`
+  allow-list, and `telemetry_blocked` proves it by waiting past the 60 s flush.
+  **Verified on 2026-09-30:** POC #1, #2 and #3 as shipped (`@latest`, now 1.0.1, no
+  CSP) each sent the POST 62–63 s after starting detection. This makes "nothing
+  leaves the device" untrue for them. A network audit shorter than any batching
+  interval would have missed it.
+- **F2 — Creating two MediaPipe tasks at once can hang.** The loader passes the WASM
+  module to each new task through a global (`self.ModuleFactory`) and then clears it.
+  Loading face and phone concurrently hung for ~17 minutes. The app can reach that
+  state (resume at Rules, then go straight to Practice). Fix: `media.js` serialises
+  task creation. Regression scenario: `concurrent_model_load`, which loads both in
+  ~16–29 s.
+- **F3 — The first inference blocks the main thread for ~4–4.6 s** (GPU shader
+  compilation). If it happens during a live step, the camera check or practice
+  freezes. Each model is now warmed up on a blank canvas while its loading message is
+  showing.
+- **F4 — The phone detector starves the face model.** Both run on the main thread, so
+  at a fixed 4 Hz the phone model (~220 ms per call) cut the face rate from 15 to
+  3.6 fps. It's now capped at 25% of wall time (minimum interval 250 ms), so it runs
+  about once every 0.9 s and face stays at ~11 fps. Production should move inference
+  into a worker.
+- **F5 — Setup guidance must be stricter than the exam thresholds.** A unit test found
+  faces that passed setup at a 5% edge margin and then raised `OUT_OF_FRAME` as soon
+  as the exam used 8%. The setup margin is now 12% (D6).
+- **F6 — The Face Landmarker undercounts a second face, so D2 needs revisiting.** On
+  the two-person test video it finds the second face in only 84% of frames. The drops
+  are brief (median 145 ms, max ~780 ms), but every drop restarts the 1.5 s raise
+  window. Consequences found:
+  1. *Setup (fixed):* the camera message flipped between "more than one person" and
+     "almost there" every ~100 ms. The multiple-faces message is now held for 1 s
+     after the second face was last seen, and `two_faces` went from 78–81% to 100%.
+  2. *Exam alert (not fixed):* simulating POC #1's persistence (1.5 s raise / 0.8 s
+     clear) over a recorded frame sequence from every start offset gives:
+
+     | Detector (same video, same persistence) | 2nd face found | `MULTIPLE_FACES` raise: median / p90 / max |
+     |---|---|---|
+     | Face Landmarker `numFaces: 2` (POC #8, D2) | 84% of frames | 3.4 / 7.2 / 8.1 s |
+     | Face Landmarker, detection/presence/tracking confidence 0.3 | 86% | 2.2 / 4.8 / 5.7 s |
+     | **BlazeFace short-range (POC #1)** | **100%** | **1.57 / 1.59 / 1.59 s** |
+
+     The alert never flapped: drops are shorter than the 0.8 s clear window, so there
+     was one raise per 20 s. It was just late. The e2e `two_faces_in_practice` agrees:
+     one alert, no flapping. This is one low-resolution (CIF) video, so it needs
+     confirming on real webcams. Even so, POC #1's detector counted faces clearly
+     better, and D2's claim that it was "validated for two faces" doesn't hold as
+     written.
+- **F7 — The mic check's timing depends on how fast the VAD starts.** The quiet window
+  starts once the VAD is running, 1.8–5.7 s after the mic opens (it varies from run to
+  run). One of six `happy_en` runs got "we heard talking while you were quiet". The
+  most likely cause is a slow VAD start that pushed the quiet window into the
+  fixture's speech (14.4 s after the mic opens). This isn't confirmed: that run wasn't
+  traced. The happy paths now log every VAD event and phase change (`micTrace`), and
+  the next four runs passed with 3.7–7.5 s of margin. For candidates it means the mic
+  step spends up to ~6 s on "loading" before it asks for silence.
+- **F8 — Everything depends on two public CDNs.** Cold loads took up to 15.5 s for the
+  phone model, and `cdn_blocked` shows the device step failing with the network named
+  as the likely cause. That's acceptable for a practice page. It isn't acceptable for
+  exam day on restricted corporate or national networks, so self-hosting is the fix
+  (R6, and the F1 decision).
+- **F9 — The readiness report is not an alert.** POC #6 accepts it unchanged, but
+  stores it with the alert lifecycle status `ALERTED`, which puts it in the proctor's
+  alert queue. Production needs a separate, non-alert event type, or a separate
+  endpoint, for "candidate readiness".
+
+### 28.11 Limitations
+
+- All numbers come from headless Chromium with fake devices on one Mac. Real webcams,
+  low-end laptops, Windows, Firefox and Safari aren't measured.
+- The test videos are CIF (352×288) Xiph sequences. F6 in particular needs repeating
+  at 720p with real people.
+- `LOOKING_AWAY` and `PHONE_DETECTED` have no automated coverage (no fixture contains
+  them).
+- The setup band and lighting thresholds are untuned starting values.
+- The rules are placeholders (D8), and the Arabic copy is machine-drafted (D7). Neither
+  may be shown to real candidates as they are.
+- The "< 5 minutes unaided" criterion, the one the POC exists for, is untested until
+  real candidates, including Arabic speakers, use it.
+- The report is only downloaded; nothing is wired to a backend.
+
+### 28.12 Risks and decisions after implementation
+
+- **New, confirmed:** third-party telemetry (F1). It's in the risk register, and
+  there's a Decision Log entry to self-host and use a CSP in production. POC #1–#3
+  still send it until they get a CSP or a pinned 0.10.x version.
+- **New:** single-model face counting delays `MULTIPLE_FACES` (F6). **D2 is changed
+  from Proposed to Revisit.** Recommended for production: keep BlazeFace for presence
+  and count (POC #1), and use the Face Landmarker with `numFaces: 1` only for pose.
+  That costs a second model per frame, so measure the price on a low-end laptop
+  before deciding.
+- **R7 (overload)** is confirmed in headless (F3, F4). It's mitigated in the POC by
+  warm-up and duty-cycling. The real fix is a worker.
+- **D1 (no runtime LLM)** held up. All candidate-facing text came from the content
+  files, and the parity test caught EN/AR drift during development.
+
+### 28.13 Recommended next steps
+
+1. **Manual matrix** (README), with real first-time candidates in EN and AR, a
+   bilingual review of `content/ar.json`, and the exam owner approving real rules to
+   replace the placeholders (Open Question #11).
+2. **Settle D2** by re-running the F6 comparison on 720p webcams with two real people,
+   then choosing between BlazeFace + Landmarker and a Landmarker with lower
+   confidence.
+3. **Add a CSP `connect-src`, or pin to 0.10.x, in POC #1–#3** so their privacy
+   statement is true again. Get compliance input (Open Question #12).
+4. **Production integration (VerifyID-Portal)**:
+   - Self-host the models and WASM.
+   - Serve the rules from the approved content version.
+   - POST the readiness report to a non-alert endpoint (F9), so the proctor
+     dashboard shows "ready / needs help" before the exam.
+   - Re-run the quick camera/mic/screen checks at exam start (R5).
+5. **Move inference into a worker** before adding any more models (F3, F4).
+6. **Mic-step polish:** preload the VAD during the camera step so the quiet phase
+   starts straight away (F7).
 
 ---
 
@@ -1380,6 +1716,11 @@ and explained with a fix. Arabic RTL renders correctly throughout.
 | 2026-09-23 | Remote control of candidate machine | View-only, remote control via native agent | View-only | Browser can't provide control; a native agent is a large security/consent/support burden with no requirement driving it (Section 27) | Proposed |
 | 2026-09-23 | Entire-screen enforcement | Trust the `displaySurface` hint, verify `getSettings().displaySurface` after pick, allow any surface | Hint + verify; reject non-`monitor`, flag `unknown` | Hints are ignored by Safari and can be overridden by the user in all browsers; verification is the only real control | Proposed |
 | 2026-09-23 | Multiple monitors | Capture all screens, block if >1, detect + alert | Single-monitor policy + `MULTIPLE_MONITORS` alert (Chromium `isExtended`) | `getAllScreensMedia()` is managed-ChromeOS/IWA only; detection is possible without a prompt in Chromium; blocking contradicts the alert-only stance | Proposed |
+| 2026-09-29 | Approach for the practice / onboarding simulator (POC #8) | Deterministic workflow, interactive tutorial, runtime LLM assistant, guided mock exam, hybrid | Hybrid: deterministic step machine + interactive detector checks + short mock exam. All text from versioned content files. **No runtime LLM** | Exam rules must be exactly what was approved, identical in EN and AR; *Moffatt v. Air Canada* makes the operator liable for what a chatbot invents (Section 28.2–28.3) | Proposed — implemented, manual matrix pending |
+| 2026-09-29 | One face model instead of two (POC #1 detector + POC #2 landmarker) | Keep both, Face Landmarker only (`numFaces: 2`) | Face Landmarker only | Fewer models on candidate laptops. **But** on a two-person video it found the second face in 84% of frames vs BlazeFace's 100%, which delays the `MULTIPLE_FACES` alert (median 3.4 s, max 8.1 s, vs 1.6 s). Candidate for production: BlazeFace for count + Landmarker (`numFaces: 1`) for pose (Section 28.10, F6) | **Revisit** — confirm on 720p webcams |
+| 2026-09-29 | MediaPipe usage telemetry (found in POC #8) | Accept it, pin 0.10.35 (last version without it), CSP `connect-src` allow-list, self-host + CSP | CSP allow-list now, in POC #8. **Production: self-host + CSP**. POC #1–#3 should get the same CSP or be pinned | There's no API opt-out, and the CSP blocks it at the browser level for every library at once. Proven by a 75 s e2e run (Section 28.10, F1) | Proposed — needs compliance input (Open Question #12) |
+| 2026-09-29 | Arabic digits | Browser default, Latin (`nu-latn`), Arabic-Indic (`nu-arab`) | Pinned Latin, configurable in content `meta` | Browser defaults differ by region tag and version. Latin is the likely convention of the exam engine | Proposed — Open Question #10 |
+| 2026-09-29 | Readiness hand-off to the proctor | None, JSON download, POST to backend | JSON download in the POC, same shape as a POC #6 event (accepted unchanged by `POST /events`) | Keeps the POC unwired. Production needs its own non-alert event type (Section 28.10, F9) | Proposed |
 
 ## Experiment Log
 
@@ -1387,3 +1728,4 @@ and explained with a fix. Arabic RTL renders correctly throughout.
 |---|---|---|---|---|---|---|
 | 1 | Validate face presence / out-of-frame / multiple-face detection on a normal webcam | Standalone browser page, MediaPipe Face Detector (BlazeFace short-range), WASM, no backend | See Section 18 (pending human test run) | Latency/FPS logged live in-app; see README for how to capture | TBD after manual testing | TBD |
 | 5 | Validate entire-screen share + live proctor viewing | `getDisplayMedia` + P2P WebRTC, Node SSE signaling; Playwright/headless Chromium with fake monitor device and synthetic 1080p exam screen; localhost | Works end to end; survives signaling outage; events reach proctor in 16–35 ms | Glass-to-glass ~23–34 ms (static), ~67 ms (scroll, High); 100–150 kbps static text @1080p; 4 candidates → 185 kbps proctor download | Reconnect tore down live video (fixed); motion + 1 Mbps cap → 1 fps/450 ms; mesh doubles candidate encode per extra viewer; SSE 6-conn limit; N≥6 load not measurable on one machine | P2P + TURN for production; SFU only on trigger; manual matrix next |
+| 8 | Validate an unaided EN/AR practice + setup check that reuses POC #1–#6 | Static page; MediaPipe 1.0.1 (pinned) Face Landmarker + Object Detector, Silero VAD 0.0.31, getDisplayMedia; content JSON; Playwright/headless Chromium with Xiph face videos, TTS speech (EN + AR), fake screen, stubbed failures | 29/29 unit tests; 18/18 e2e scenarios (EN + AR happy paths, 11 failure modes, practice alerts, network/telemetry, POC #6 hand-off) | Face ~11 fps / ~50 ms; phone ~220 ms at ~1.1 Hz; warm-up ~4–4.6 s per model; happy path 62–69 s with fake devices (Section 28.10) | MediaPipe telemetry (F1); concurrent task creation hang (F2, fixed); main-thread starvation (F3–F4, mitigated); Landmarker undercounts a second face (F6); VAD start-up timing (F7) | Hybrid deterministic approach confirmed; CSP allow-list required; real-candidate test next |

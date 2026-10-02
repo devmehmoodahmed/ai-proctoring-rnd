@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Network allow-list, enforced by the browser: the page may only fetch its own
+     files, the CDN code/WASM and the model files. MediaPipe tasks-vision ≥ 1.0.0
+     posts usage telemetry to odml.pa.googleapis.com every 60 s and has no option to
+     turn it off (R&D.md 28.10); this blocks it along with anything else not listed.
+     Only connect-src is set, so script/WASM/worker loading is unaffected. -->
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com" />
+<title>POC #8 — Practice / Onboarding Simulator</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<!-- Everything visible to the candidate is rendered by app.js from content/<lang>.json.
+     The only text in this file is the fallback shown if the script can't run. -->
+<header class="topbar">
+  <div class="brand">
+    <span id="appTitle" class="app-title">Exam practice and setup check</span>
+    <span id="practiceBadge" class="badge">PRACTICE</span>
+  </div>
+  <div class="lang-switch" role="group" id="langGroup">
+    <button type="button" data-lang="en" lang="en">English</button>
+    <button type="button" data-lang="ar" lang="ar" dir="rtl">العربية</button>
+  </div>
+</header>
+
+<div id="notices" class="notices"></div>
+
+<nav id="stepper" class="stepper"></nav>
+
+<main id="stepRoot" class="step-root" tabindex="-1">
+  <noscript>This practice needs JavaScript.</noscript>
+</main>
+
+<!-- Polite announcements for screen-reader users (guidance changes, check results). -->
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<aside id="devPanel" class="dev-panel" hidden></aside>
+
+<!-- The single camera preview, moved between steps so the stream never restarts. -->
+<template id="camDockTemplate">
+  <div class="cam-dock">
+    <video class="cam-video" autoplay playsinline muted></video>
+    <canvas class="cam-overlay"></canvas>
+  </div>
+</template>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

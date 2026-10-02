@@ -1,0 +1,458 @@
+{
+  "meta": {
+    "lang": "en",
+    "dir": "ltr",
+    "name": "English",
+    "number_locale": "en",
+    "content_version": "2026-09-29.1",
+    "policy_status": "draft-placeholder",
+    "translation_status": "source"
+  },
+  "ui": {
+    "app_title": "Exam practice and setup check",
+    "practice_badge": "PRACTICE",
+    "draft_policy_banner": "Prototype: these rules are placeholders, not the official exam rules.",
+    "translation_notice": "This translation has not been reviewed yet.",
+    "language_label": "Language",
+    "step_of": "Step {current} of {total}",
+    "continue": "Continue",
+    "back": "Back",
+    "skip": "Skip — I need help with this",
+    "retry": "Try again",
+    "continue_anyway": "Continue anyway",
+    "loading": "Loading…",
+    "status": {
+      "pass": "Passed",
+      "warn": "Passed with a warning",
+      "fail": "Needs attention",
+      "skipped": "Skipped — needs help",
+      "not_run": "Not checked",
+      "running": "Checking…"
+    },
+    "resume_title": "Welcome back",
+    "resume_body": "You were on the \"{step}\" step. Do you want to continue from there?",
+    "resume_yes": "Continue where I left off",
+    "resume_no": "Start again",
+    "dev_metrics": "Developer metrics",
+    "progress_label": "Progress"
+  },
+  "check_names": {
+    "welcome": "Welcome",
+    "device": "Computer and browser",
+    "camera": "Camera",
+    "microphone": "Microphone",
+    "screen": "Screen sharing",
+    "rules": "Exam rules",
+    "practice": "Practice exam",
+    "summary": "Summary"
+  },
+  "steps": {
+    "welcome": {
+      "title": "Get ready for your exam",
+      "intro": "This practice checks that your computer is ready and shows you how the exam is monitored. Nothing here counts towards your result.",
+      "duration": "It takes about {minutes} minutes.",
+      "privacy_title": "Your privacy",
+      "privacy_points": [
+        "Everything happens on this computer. Nothing you do here is recorded or sent anywhere.",
+        "The camera and microphone are only used for these checks, and they switch off at the end.",
+        "At the end you can download a short report of your results. It contains no images, video or audio."
+      ],
+      "need_title": "What you need",
+      "need_points": [
+        "The same computer and room you will use on exam day",
+        "A webcam and a microphone",
+        "Google Chrome or Microsoft Edge (recommended)",
+        "Your photo ID"
+      ],
+      "start": "Start the practice"
+    },
+    "device": {
+      "title": "Computer and browser",
+      "intro": "We are checking that this computer and browser can run the exam.",
+      "checks": {
+        "secure_context": {
+          "label": "Secure connection",
+          "fail": "Open this page using an https:// address."
+        },
+        "desktop": {
+          "label": "Desktop or laptop computer",
+          "fail": "Phones and tablets can't be used. Please use a desktop or laptop computer."
+        },
+        "browser": {
+          "label": "Browser",
+          "warn": "{browser} works, but some checks (such as detecting a second monitor) only work in Chrome or Edge."
+        },
+        "camera_api": {
+          "label": "Camera and microphone support",
+          "fail": "This browser can't use a camera. Please use Chrome or Edge."
+        },
+        "screen_api": {
+          "label": "Screen sharing support",
+          "fail": "This browser can't share your screen. Please use Chrome or Edge on a computer."
+        },
+        "webrtc": {
+          "label": "Live video support",
+          "fail": "This browser can't send live video. Please use Chrome or Edge."
+        },
+        "wasm": {
+          "label": "Checking software support",
+          "fail": "This browser can't run the checking software. Please update it or use Chrome or Edge."
+        },
+        "screen_size": {
+          "label": "Screen size",
+          "warn": "Your screen is small. The exam may be hard to read."
+        },
+        "models": {
+          "label": "Checking software download",
+          "loading": "Downloading…",
+          "fail": "The checking software couldn't be downloaded. Your network may be blocking it. Try another network, or ask for help."
+        }
+      },
+      "all_good": "Your computer and browser are ready.",
+      "has_issues": "Some checks need attention. Fix them if you can, or skip and ask for help."
+    },
+    "camera": {
+      "title": "Camera",
+      "intro": "Your proctor needs to see your face clearly for the whole exam.",
+      "allow_btn": "Turn on my camera",
+      "requesting": "Waiting for you to allow the camera…",
+      "errors": {
+        "NotAllowedError": "Camera access is blocked. Click the camera icon in the address bar, choose Allow, then press Try again. On a Mac, also check System Settings → Privacy & Security → Camera.",
+        "NotFoundError": "No camera was found. Connect a webcam, then press Try again.",
+        "NotReadableError": "Your camera is being used by another app (for example Zoom, Teams, Meet or FaceTime). Close that app, then press Try again.",
+        "OverconstrainedError": "Your camera doesn't support the required settings. Try a different camera.",
+        "generic": "The camera couldn't start ({code}). Press Try again, or skip and ask for help."
+      },
+      "guidance": {
+        "NO_FACE": "We can't see your face. Sit in front of the camera.",
+        "MULTIPLE_FACES": "We can see more than one person. Only you should be in view.",
+        "TOO_FAR": "You are too far away.",
+        "TOO_CLOSE": "You are too close.",
+        "OUT_OF_FRAME": "Part of your face is outside the camera view.",
+        "OFF_CENTRE": "Almost there.",
+        "GOOD": "Good position. Look at the centre of your screen and hold still."
+      },
+      "hints": {
+        "move_left": "Move a little to your left.",
+        "move_right": "Move a little to your right.",
+        "move_closer": "Move a little closer to the camera.",
+        "move_back": "Move back a little so your head and shoulders are in view.",
+        "tilt_up": "Tilt your camera up a little.",
+        "tilt_down": "Tilt your camera down a little."
+      },
+      "lighting": {
+        "TOO_DARK": "It's too dark. Turn on a light or face a window.",
+        "BACKLIT": "There is bright light behind you. Face the light instead, or close the curtains behind you.",
+        "TOO_BRIGHT": "Your face is very bright. Move away from direct light.",
+        "OK": "Lighting looks good."
+      },
+      "holding": "Hold still… {seconds}",
+      "unstable": "Please keep your head still while we check.",
+      "passed": "Your camera is ready.",
+      "lighting_only": "Your position is good, but the lighting could be better. You can fix it or continue anyway."
+    },
+    "microphone": {
+      "title": "Microphone",
+      "intro": "The exam listens for talking in the room. We will check that your microphone works. Nothing is recorded.",
+      "allow_btn": "Turn on my microphone",
+      "requesting": "Waiting for you to allow the microphone…",
+      "loading": "Loading the voice check…",
+      "load_failed": "The voice check couldn't be downloaded. Your network may be blocking it.",
+      "errors": {
+        "NotAllowedError": "Microphone access is blocked. Click the icon in the address bar, allow the microphone, then press Try again. On a Mac, also check System Settings → Privacy & Security → Microphone.",
+        "NotFoundError": "No microphone was found. Connect a microphone, then press Try again.",
+        "NotReadableError": "Your microphone is being used by another app (for example Zoom, Teams or Meet). Close that app, then press Try again.",
+        "generic": "The microphone couldn't start ({code}). Press Try again, or skip and ask for help."
+      },
+      "level_label": "Microphone level",
+      "phase_quiet": "Please stay quiet… {seconds}",
+      "quiet_ok": "Quiet room — good.",
+      "quiet_heard": "We heard talking while you were quiet. Is there a TV, radio or another person nearby? During the exam, this would alert your proctor.",
+      "phase_speak": "Now read this sentence aloud:",
+      "sentence": "I am ready to start my practice exam.",
+      "listening": "Listening…",
+      "heard": "We heard you clearly. Your microphone works.",
+      "not_heard": "We couldn't hear you.",
+      "not_heard_tips": [
+        "Check that your microphone isn't muted (some headsets and laptops have a mute switch).",
+        "Check that the right microphone is selected in your computer's sound settings.",
+        "Speak at a normal volume, facing the computer."
+      ],
+      "muted_hint": "Your microphone seems completely silent. It may be muted or disconnected."
+    },
+    "screen": {
+      "title": "Screen sharing",
+      "intro": "During the exam you share your entire screen with your proctor. Let's practise now. Nothing will be sent.",
+      "instructions": [
+        "Close other apps and turn off notifications. Your proctor can see everything on the screen you share.",
+        "Press the button below. When your browser asks, choose Entire Screen, not a window or a tab.",
+        "If you have more than one monitor, unplug the extra ones first."
+      ],
+      "mac_title": "Using a Mac?",
+      "mac_steps": [
+        "The first time, macOS may block screen sharing. Open System Settings → Privacy & Security → Screen & System Audio Recording (on older versions: Screen Recording).",
+        "Turn on your browser (for example Google Chrome).",
+        "When asked, choose Quit & Reopen. This page remembers where you were.",
+        "Come back to this step and press the share button again."
+      ],
+      "mac_note": "macOS may ask you to confirm this permission again from time to time.",
+      "share_btn": "Share my entire screen",
+      "sharing": "Waiting for you to choose what to share…",
+      "passed": "Screen sharing works. You shared your entire screen.",
+      "preview_note": "This preview is only shown on your computer. Nothing was sent.",
+      "surface_names": {
+        "window": "window",
+        "browser": "browser tab",
+        "application": "app"
+      },
+      "errors": {
+        "NotAllowedError": "Screen sharing didn't start. If you pressed Cancel, press Try again and choose Entire Screen. If you didn't see a choice at all, your computer may be blocking screen sharing.",
+        "WRONG_SURFACE": "You shared a {surface}. The exam needs your entire screen. Press Try again and choose Entire Screen.",
+        "SURFACE_UNVERIFIED": "Sharing works, but this browser doesn't tell us whether you shared your entire screen. Please make sure you did — your proctor will check. Chrome or Edge is recommended.",
+        "NOT_SUPPORTED": "This browser can't share your screen. Please use Chrome or Edge on a desktop or laptop computer.",
+        "MULTIPLE_MONITORS": "More than one monitor is connected. Please unplug the extra monitor before your exam. During the exam, your proctor is told when a second monitor is connected.",
+        "generic": "Screen sharing couldn't start ({code}). Press Try again, or skip and ask for help."
+      }
+    },
+    "rules": {
+      "title": "Exam rules",
+      "intro": "Please read these rules carefully. They apply for the whole exam.",
+      "allowed_title": "Allowed",
+      "prohibited_title": "Not allowed",
+      "behaviour_title": "During the exam",
+      "if_detected": "If this is noticed:",
+      "id_title": "Identity check",
+      "id_body": "Before the exam starts, you will confirm your identity with a photo of your ID and a photo of your face. Use the ID you registered with, avoid glare, and make sure all four corners are visible.",
+      "env_title": "Prepare your room",
+      "env_items": [
+        "My desk is clear. Only what the rules allow is on it.",
+        "I am alone in a quiet, private room, and the door is closed.",
+        "Extra monitors are unplugged.",
+        "Other apps and notifications are closed.",
+        "My photo ID is ready.",
+        "My computer is plugged into power."
+      ],
+      "env_cant": "I can't do one of these. I will ask for help.",
+      "room_scan_title": "Practise a room scan (optional)",
+      "room_scan_body": "Your proctor may ask you to show your room. Slowly turn your camera, or your laptop, to show all four walls, your desk, and the area behind your screen. Nothing is recorded.",
+      "room_scan_btn": "Start a {seconds}-second practice scan",
+      "room_scan_running": "Slowly show your room… {seconds}",
+      "room_scan_done": "Room scan practised.",
+      "room_scan_no_camera": "Turn on your camera in the Camera step to practise this.",
+      "faq_title": "Common questions",
+      "faq": [
+        {
+          "q": "Is this practice recorded?",
+          "a": "No. Everything happens on this computer. No video, audio or images are saved or sent. You can download a short report of your check results."
+        },
+        {
+          "q": "Can the system fail me or stop my exam?",
+          "a": "No. The system only notices things, such as your face leaving the camera view, and tells your proctor. A person reviews every alert and decides what, if anything, happens."
+        },
+        {
+          "q": "What if I look away for a moment, or sneeze?",
+          "a": "That's normal. Short moments don't create alerts, and a person reviews anything that does."
+        },
+        {
+          "q": "What if I need an accommodation?",
+          "a": "Contact the exam support team before exam day so your proctor knows in advance."
+        }
+      ],
+      "ack": "I have read and understood these rules.",
+      "env_incomplete": "Tick every item, or tick the last box if you can't."
+    },
+    "practice": {
+      "title": "Practice exam",
+      "intro": "This is a short practice exam. It works like the real one: the camera and microphone are checked while you answer. Try the actions in the “Try these” list to see what happens.",
+      "not_scored": "Practice only — not scored",
+      "timer_label": "Time left",
+      "submit": "Finish practice",
+      "time_up": "Time is up.",
+      "try_title": "Try these, and see what happens",
+      "try_items": {
+        "LOOKING_AWAY": "Look away from your screen for a few seconds",
+        "FACE_MISSING": "Move out of the camera view for a few seconds",
+        "SPEECH_DETECTED": "Say something out loud",
+        "PHONE_DETECTED": "Hold a phone up to the camera (optional)"
+      },
+      "phone_loading": "Loading phone check…",
+      "phone_unavailable": "The phone check couldn't be loaded.",
+      "camera_unavailable": "Camera is off, so camera checks aren't shown.",
+      "mic_unavailable": "Microphone is off, so voice checks aren't shown.",
+      "all_clear": "Everything looks normal.",
+      "back_to_normal": "Back to normal.",
+      "what_next_title": "What happens next in a real exam",
+      "what_next_steps": [
+        "You see a message like the one above.",
+        "Your proctor receives an alert like this:",
+        "A person reviews it. The system never decides on its own. Brief moments, like a sneeze or a quick glance, are normal."
+      ],
+      "alert_status": "Status: awaiting proctor review",
+      "result_title": "Practice complete",
+      "result_score": "{correct} of {total} answers were correct. This is not scored.",
+      "your_answer": "Your answer",
+      "explanation": "Why",
+      "start_btn": "Start the practice exam",
+      "pose_unavailable": "The looking-away check needs the Camera step to be completed.",
+      "alert_example": "Example alert"
+    },
+    "summary": {
+      "title": "Summary",
+      "overall": {
+        "ready": {
+          "title": "You're ready",
+          "body": "Everything passed. Use this same computer and room on exam day."
+        },
+        "ready_with_warnings": {
+          "title": "Ready, with warnings",
+          "body": "You can take the exam, but please fix the warnings below before exam day if you can."
+        },
+        "needs_help": {
+          "title": "You need help before the exam",
+          "body": "Some checks didn't pass. Contact the exam support team before exam day, and share your report with them."
+        }
+      },
+      "checks_title": "Your checks",
+      "download_btn": "Download my report",
+      "report_privacy": "The report contains only check results. No images, video or audio.",
+      "restart_btn": "Start again",
+      "media_off": "Your camera and microphone are now off.",
+      "exam_day_title": "On exam day",
+      "exam_day": [
+        "Use the same computer, browser and room.",
+        "Close other apps and turn off notifications before you start.",
+        "Have your photo ID ready.",
+        "If something goes wrong during the exam, stay in view and wait for your proctor."
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "R-ID",
+      "kind": "allowed",
+      "title": "Your photo ID",
+      "text": "Needed for the identity check. Put it away once the check is done."
+    },
+    {
+      "id": "R-WATER",
+      "kind": "allowed",
+      "title": "Water in a clear container",
+      "text": "Keep it off the desk area in front of your keyboard."
+    },
+    {
+      "id": "R-PHONE",
+      "kind": "prohibited",
+      "title": "Phones, smartwatches and other devices",
+      "text": "Switch them off and keep them out of reach.",
+      "if_detected": "Your proctor receives an alert and may ask you to show your desk."
+    },
+    {
+      "id": "R-NOTES",
+      "kind": "prohibited",
+      "title": "Notes, books and papers",
+      "text": "Remove them from your desk and walls."
+    },
+    {
+      "id": "R-AUDIO",
+      "kind": "prohibited",
+      "title": "Headphones and earbuds",
+      "text": "Don't wear them during the exam. Your proctor may ask for a quick check."
+    },
+    {
+      "id": "R-MONITOR",
+      "kind": "prohibited",
+      "title": "Second monitors",
+      "text": "Unplug extra monitors before you start.",
+      "if_detected": "Your proctor is told that a second monitor is connected."
+    },
+    {
+      "id": "R-VIEW",
+      "kind": "behaviour",
+      "title": "Stay in the camera view",
+      "text": "Keep your face visible and centred for the whole exam.",
+      "if_detected": "You see a reminder, and your proctor receives an alert to review."
+    },
+    {
+      "id": "R-EYES",
+      "kind": "behaviour",
+      "title": "Keep your eyes on the exam screen",
+      "text": "Looking away for long periods may be flagged.",
+      "if_detected": "You see a reminder, and your proctor receives an alert to review."
+    },
+    {
+      "id": "R-QUIET",
+      "kind": "behaviour",
+      "title": "Stay silent",
+      "text": "Don't talk, and don't read questions aloud.",
+      "if_detected": "You see a reminder, and your proctor receives an alert to review."
+    },
+    {
+      "id": "R-ALONE",
+      "kind": "behaviour",
+      "title": "Be alone",
+      "text": "No one else may be in the room or in the camera view.",
+      "if_detected": "Your proctor receives an alert and may ask you to show your room."
+    },
+    {
+      "id": "R-SHARE",
+      "kind": "behaviour",
+      "title": "Keep sharing your entire screen",
+      "text": "Don't stop sharing until the exam has finished.",
+      "if_detected": "Your proctor is told immediately if screen sharing stops."
+    }
+  ],
+  "nudges": {
+    "FACE_MISSING": "We can't see your face. Please return to the camera view.",
+    "OUT_OF_FRAME": "Part of your face is outside the camera view. Please move back to the centre.",
+    "TOO_FAR": "Please move a little closer to the camera.",
+    "MULTIPLE_FACES": "We can see more than one person. Only you should be in view during the exam.",
+    "LOOKING_AWAY": "Please keep your eyes on your exam screen.",
+    "SPEECH_DETECTED": "We can hear talking. Please stay silent during the exam.",
+    "PHONE_DETECTED": "A phone may be visible. Please put it away, out of reach."
+  },
+  "proctor_alerts": {
+    "FACE_MISSING": "Face not visible",
+    "OUT_OF_FRAME": "Face partly outside the camera view",
+    "TOO_FAR": "Candidate far from the camera",
+    "MULTIPLE_FACES": "More than one face in view",
+    "LOOKING_AWAY": "Head turned away from the screen",
+    "SPEECH_DETECTED": "Talking detected",
+    "PHONE_DETECTED": "Possible phone in view",
+    "duration": "for {seconds} s or longer"
+  },
+  "practice_questions": [
+    {
+      "id": "Q1",
+      "prompt": "Your phone is on your desk as the exam begins. What should you do?",
+      "options": [
+        "Leave it face down on the desk",
+        "Switch it off and put it out of reach",
+        "Keep it on your lap"
+      ],
+      "correct": 1,
+      "explanation": "Phones must be switched off and kept out of reach for the whole exam."
+    },
+    {
+      "id": "Q2",
+      "prompt": "A question is long, and you want to understand it. Can you read it aloud?",
+      "options": [
+        "Yes, if I whisper",
+        "No, I read it silently",
+        "Yes, if my proctor is busy"
+      ],
+      "correct": 1,
+      "explanation": "Talking, including reading aloud, is noticed and sent to your proctor to review."
+    },
+    {
+      "id": "Q3",
+      "prompt": "A message says \"We can't see your face.\" What happens next?",
+      "options": [
+        "The exam ends automatically",
+        "My proctor gets an alert, and a person reviews it",
+        "Nothing, it only appears in practice"
+      ],
+      "correct": 1,
+      "explanation": "The system only notices things. A person always reviews an alert and makes any decision."
+    }
+  ]
+}
