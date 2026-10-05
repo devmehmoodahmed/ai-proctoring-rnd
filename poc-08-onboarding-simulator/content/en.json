@@ -95,17 +95,17 @@
           "fail": "This browser can't send live video. Please use Chrome or Edge."
         },
         "wasm": {
-          "label": "Checking software support",
-          "fail": "This browser can't run the checking software. Please update it or use Chrome or Edge."
+          "label": "Exam check support",
+          "fail": "This browser can't run the exam checks. Please update it or use Chrome or Edge."
         },
         "screen_size": {
           "label": "Screen size",
           "warn": "Your screen is small. The exam may be hard to read."
         },
         "models": {
-          "label": "Checking software download",
-          "loading": "Downloading…",
-          "fail": "The checking software couldn't be downloaded. Your network may be blocking it. Try another network, or ask for help."
+          "label": "Exam check tools",
+          "loading": "Loading…",
+          "fail": "The exam check tools couldn't load. Your network may be blocking them. Try another network, or ask for help."
         }
       },
       "all_good": "Your computer and browser are ready.",
