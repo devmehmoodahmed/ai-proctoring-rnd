@@ -1,20 +1,26 @@
 # AI Proctoring R&D
 
-Status: **All eight POCs are implemented.** POC #1–#4, #6 and #7 have been manually
-tested by the team. POC #5 (screen capture, Section 27) was verified with automated
-browser runs on 2026-09-23; its manual test matrix (real picker, multi-monitor, macOS
-permission, other browsers, real network) is still pending. POC #8 (practice /
-onboarding simulator, Section 28) was implemented on 2026-09-29 and verified on
-2026-09-30 with 29 unit tests and an 18-scenario automated browser suite, all passing
-(Section 28.10). A manual team run in English on 2026-10-06 finished in ~2–3 minutes
-with every check passing. The rest of its manual matrix (real first-time candidates,
-especially Arabic speakers) is still pending, and it reopened decision D2 on face counting (finding F6). The written test-matrix
-results for POC #1–#4/#6 are not yet recorded here (Section 18 and the Results
-subsections under Section 22–25). Record them before treating those POCs as fully
-validated. **POC #7 saves real recorded video to local disk; see its README before
-running it.** **POC #8 found that MediaPipe ≥ 1.0.0 sends usage telemetry to Google,
-which affected POC #1–#3 as well (Section 28.10, finding F1). They got the same CSP
-block on 2026-10-06.**
+Status (2026-10-06): **All eight POCs are implemented and committed.**
+
+- **POC #1–#4:** tested by hand by the team. The written results aren't recorded yet
+  (Section 18 and the Results subsections of Sections 22–24).
+- **POC #5 (screen capture, Section 27):** automated browser runs on 2026-09-23. A
+  manual entire-screen share in Chrome on macOS worked on 2026-10-02. The rest of its
+  manual matrix (window/tab rejection, second monitor, macOS permission, other
+  browsers, real networks, 5+ candidates) is pending.
+- **POC #6 and #7:** basic flows tested by the team. Their manual matrices (POC #6:
+  multi-tab sync, reconnect, long runs; POC #7: clip timing with a real webcam) are
+  pending. **POC #7 saves real recorded video to local disk; see its README before
+  running it.**
+- **POC #8 (practice / onboarding simulator, Section 28):** 29 unit tests and 18
+  automated browser scenarios pass (2026-09-30). A manual team run in English on
+  2026-10-06 took ~2–3 minutes with every check passing. Real first-time candidates,
+  especially Arabic speakers, are still pending. It reopened decision D2 on face
+  counting (finding F6).
+- **Privacy:** POC #8 found that MediaPipe ≥ 1.0.0 sends usage telemetry to Google
+  (Section 28.10, F1). POC #8 and, since 2026-10-06, POC #1–#3 block it with a CSP.
+
+Current next steps are in Section 21.
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -47,11 +53,16 @@ fully automatic exam pausing (Section on Automatic Exam Pause) and **against**
 building a full commercial-grade proctoring platform from scratch before validating
 detection reliability on real hardware.
 
-POC #1 (face presence / out-of-frame / multiple-face detection using MediaPipe in the
-browser) is complete. Results are in Section 18. It validates that this class of
-detection is fast, accurate enough to build on, and cheap (no server round-trip), but
-also surfaces real false-positive risk from lighting and camera angle that any
-downstream persistence/threshold logic must account for.
+All eight POCs are now built (Section 16): face presence, gaze / head pose, phone
+detection, speaking detection, live screen viewing, real-time alerts to a proctor
+dashboard, evidence clips, and a bilingual (EN/AR) practice and onboarding simulator.
+Together they show that the in-browser detection is fast and cheap (no server
+round-trip) and that the alert → dashboard → evidence loop works end to end. They
+also surfaced the risks production must handle: false positives from lighting and
+camera angle, a slower multiple-faces alert with the Face Landmarker (F6), browser
+load from running several models (F3, F4), dependence on public CDNs (F8) and
+third-party telemetry (F1). What remains is mostly testing with real people and
+hardware, plus decisions only the organization can make (Section 20).
 
 ---
 
@@ -503,7 +514,7 @@ Decision Log for status.
 | 2 | Gaze / head pose | **Implemented, tested** — see Section 22; written results pending |
 | 3 | Phone/object detection | **Implemented, tested** — see Section 23; written results pending |
 | 4 | Audio/speaking detection | **Implemented, tested** — see Section 24; written results pending |
-| 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual matrix pending |
+| 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual entire-screen share passed (2026-10-02), rest of manual matrix pending |
 | 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; written results pending |
 | 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26 |
 | 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, team EN run passed (2026-10-06), manual matrix (real candidates) pending |
@@ -547,8 +558,8 @@ Recorded after manual testing — see the "Testing Notes" section of
 [poc-01-face-presence/README.md](poc-01-face-presence/README.md) for the raw
 observations log; this section is the synthesized summary.
 
-*(To be filled in immediately after manual testing is performed — see Section 29 test
-matrix. This section is intentionally left for the human tester's observations since
+*(To be filled in immediately after manual testing is performed — see the test
+matrix in [poc-01-face-presence/README.md](poc-01-face-presence/README.md). This section is intentionally left for the human tester's observations since
 POC #1's own author, i.e. this assistant, cannot physically sit in front of a webcam
 under different lighting/distance/angle conditions. The POC ships with an in-app event
 log and a JSON export specifically so a human can run the test matrix and drop results
@@ -618,12 +629,16 @@ those sections record the current best proposal, not an approved architecture.
 4. Resolve Open Questions #1 and #2 — they change the shape of any real
    ActionCable/S3 integration that follows POC #6/#7, and #1 (SEB) directly affects
    whether POC #5's screen viewing is needed/possible at exam time.
-5. Run POC #5's manual test matrix (`poc-05-screen-capture/README.md`) — in
-   particular real window/tab rejection, a real second monitor, the macOS permission
-   flow, Firefox/Safari/Edge on Windows, a cross-machine network test, and 5+
-   candidates on separate machines. Record results in Section 27.
-6. Review the POC #8 proposal (Section 28) and approve/adjust scope before any
-   implementation, per the working rule governing this R&D track.
+5. Run the rest of POC #5's manual test matrix (`poc-05-screen-capture/README.md`).
+   The entire-screen share in Chrome on macOS passed on 2026-10-02. Still needed: real
+   window/tab rejection, a real second monitor, the macOS permission flow,
+   Firefox/Safari/Edge on Windows, a cross-machine network test, and 5+ candidates on
+   separate machines. Record results in Section 27.
+6. POC #8: run its manual matrix with real first-time candidates in EN and AR, settle
+   D2 (repeat the face-count test at 720p with two real people), and the other items
+   in Section 28.13.
+7. Get answers to the policy and compliance questions in Section 20 (#7–#14),
+   especially the real exam rules (#11) and third-party requests (#12).
 
 ## 22. POC #2 — Gaze / Head-Pose Detection
 
@@ -1338,7 +1353,7 @@ with real capture.
 
 | Criterion | Status |
 |---|---|
-| Candidate can share entire screen; proctor sees it live | ✅ (automated, fake monitor source) |
+| Candidate can share entire screen; proctor sees it live | ✅ automated (fake monitor source); ✅ manual, Chrome on macOS, 2026-10-02 |
 | Wrong surface (window/tab) rejected | ⏳ implemented, needs real picker (manual) |
 | Proctor notified immediately when sharing stops | ✅ 16–35 ms |
 | Low latency | ✅ ~25 ms glass-to-glass on localhost for static content; real-network figure pending |

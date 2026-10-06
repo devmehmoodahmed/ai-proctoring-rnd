@@ -127,7 +127,7 @@ it for real testing.
 
 | Scenario | Worked as expected? | Notes |
 |---|---|---|
-| Chrome (macOS): share entire screen, proctor sees it; note connect time | | |
+| Chrome (macOS): share entire screen, proctor sees it; note connect time | Yes | 2026-10-02, team run: surface `monitor`, 3456×2234, one monitor detected; proctor page showed it live. Connect time not noted |
 | Chrome: pick a **window**, should be rejected with `WRONG_SURFACE` | | |
 | Chrome: pick a **tab**, should be rejected with `WRONG_SURFACE` | | |
 | Chrome: stop via the browser's "Stop sharing" bar; proctor notified | | |
