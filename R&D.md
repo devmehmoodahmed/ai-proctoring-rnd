@@ -13,7 +13,8 @@ results for POC #1–#4/#6 are not yet recorded here (Section 18 and the Results
 subsections under Section 22–25). Record them before treating those POCs as fully
 validated. **POC #7 saves real recorded video to local disk; see its README before
 running it.** **POC #8 found that MediaPipe ≥ 1.0.0 sends usage telemetry to Google,
-which affects POC #1–#3 as well (Section 28.10, finding F1).**
+which affected POC #1–#3 as well (Section 28.10, finding F1). They got the same CSP
+block on 2026-10-06.**
 
 This document is the living record of the AI-assisted proctoring R&D effort. It is
 updated after every research pass and every POC. Nothing here should be read as a
@@ -1588,7 +1589,10 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
   **Verified on 2026-09-30:** POC #1, #2 and #3 as shipped (`@latest`, now 1.0.1, no
   CSP) each sent the POST 62–63 s after starting detection. This makes "nothing
   leaves the device" untrue for them. A network audit shorter than any batching
-  interval would have missed it.
+  interval would have missed it. **Fixed on 2026-10-06:** POC #1–#3 now have POC #8's
+  CSP. A 75 s headless run of each (fake camera) showed the POST blocked as a
+  `connect-src` violation for `odml.pa.googleapis.com/v1/log`, the model still loaded
+  (HTTP 200), detection started and there were no page errors.
 - **F2 — Creating two MediaPipe tasks at once can hang.** The loader passes the WASM
   module to each new task through a global (`self.ModuleFactory`) and then clears it.
   Loading face and phone concurrently hung for ~17 minutes. The app can reach that
@@ -1666,7 +1670,7 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
 
 - **New, confirmed:** third-party telemetry (F1). It's in the risk register, and
   there's a Decision Log entry to self-host and use a CSP in production. POC #1–#3
-  still send it until they get a CSP or a pinned 0.10.x version.
+  got the same CSP on 2026-10-06, so they no longer send it.
 - **New:** single-model face counting delays `MULTIPLE_FACES` (F6). **D2 is changed
   from Proposed to Revisit.** Recommended for production: keep BlazeFace for presence
   and count (POC #1), and use the Face Landmarker with `numFaces: 1` only for pose.
@@ -1685,8 +1689,8 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
 2. **Settle D2** by re-running the F6 comparison on 720p webcams with two real people,
    then choosing between BlazeFace + Landmarker and a Landmarker with lower
    confidence.
-3. **Add a CSP `connect-src`, or pin to 0.10.x, in POC #1–#3** so their privacy
-   statement is true again. Get compliance input (Open Question #12).
+3. ~~**Add a CSP `connect-src`, or pin to 0.10.x, in POC #1–#3**~~ **Done
+   2026-10-06** (CSP, see F1). Compliance input is still needed (Open Question #12).
 4. **Production integration (VerifyID-Portal)**:
    - Self-host the models and WASM.
    - Serve the rules from the approved content version.
@@ -1719,7 +1723,7 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
 | 2026-09-23 | Multiple monitors | Capture all screens, block if >1, detect + alert | Single-monitor policy + `MULTIPLE_MONITORS` alert (Chromium `isExtended`) | `getAllScreensMedia()` is managed-ChromeOS/IWA only; detection is possible without a prompt in Chromium; blocking contradicts the alert-only stance | Proposed |
 | 2026-09-29 | Approach for the practice / onboarding simulator (POC #8) | Deterministic workflow, interactive tutorial, runtime LLM assistant, guided mock exam, hybrid | Hybrid: deterministic step machine + interactive detector checks + short mock exam. All text from versioned content files. **No runtime LLM** | Exam rules must be exactly what was approved, identical in EN and AR; *Moffatt v. Air Canada* makes the operator liable for what a chatbot invents (Section 28.2–28.3) | Proposed — implemented, manual matrix pending |
 | 2026-09-29 | One face model instead of two (POC #1 detector + POC #2 landmarker) | Keep both, Face Landmarker only (`numFaces: 2`) | Face Landmarker only | Fewer models on candidate laptops. **But** on a two-person video it found the second face in 84% of frames vs BlazeFace's 100%, which delays the `MULTIPLE_FACES` alert (median 3.4 s, max 8.1 s, vs 1.6 s). Candidate for production: BlazeFace for count + Landmarker (`numFaces: 1`) for pose (Section 28.10, F6) | **Revisit** — confirm on 720p webcams |
-| 2026-09-29 | MediaPipe usage telemetry (found in POC #8) | Accept it, pin 0.10.35 (last version without it), CSP `connect-src` allow-list, self-host + CSP | CSP allow-list now, in POC #8. **Production: self-host + CSP**. POC #1–#3 should get the same CSP or be pinned | There's no API opt-out, and the CSP blocks it at the browser level for every library at once. Proven by a 75 s e2e run (Section 28.10, F1) | Proposed — needs compliance input (Open Question #12) |
+| 2026-09-29 | MediaPipe usage telemetry (found in POC #8) | Accept it, pin 0.10.35 (last version without it), CSP `connect-src` allow-list, self-host + CSP | CSP allow-list now, in POC #8. **Production: self-host + CSP**. POC #1–#3 got the same CSP on 2026-10-06 | There's no API opt-out, and the CSP blocks it at the browser level for every library at once. Proven by a 75 s e2e run (Section 28.10, F1) | Proposed — needs compliance input (Open Question #12) |
 | 2026-09-29 | Arabic digits | Browser default, Latin (`nu-latn`), Arabic-Indic (`nu-arab`) | Pinned Latin, configurable in content `meta` | Browser defaults differ by region tag and version. Latin is the likely convention of the exam engine | Proposed — Open Question #10 |
 | 2026-09-29 | Readiness hand-off to the proctor | None, JSON download, POST to backend | JSON download in the POC, same shape as a POC #6 event (accepted unchanged by `POST /events`) | Keeps the POC unwired. Production needs its own non-alert event type (Section 28.10, F9) | Proposed |
 

@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Network allow-list (same as POC #8): blocks MediaPipe's usage telemetry to
+     odml.pa.googleapis.com (R&D.md 28.10, F1). Only connect-src is set, so
+     script/WASM/worker loading is unaffected. -->
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com" />
 <title>POC #3 — Phone / Object Detection</title>
 <link rel="stylesheet" href="style.css" />
 </head>
