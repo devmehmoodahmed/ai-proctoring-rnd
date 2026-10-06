@@ -121,7 +121,7 @@ provide.
 
 | Scenario | Worked? | Notes |
 |---|---|---|
-| First-time candidate, no help, EN: time to finish (target < ~5 min), where they hesitated | | |
+| First-time candidate, no help, EN: time to finish (target < ~5 min), where they hesitated | Partly | 2026-10-06, team run on macOS with real camera, mic and screen: Welcome → Summary in ~2–3 min, all six checks passed, no problems. The tester knew the app, so a real first-time candidate is still needed |
 | First-time candidate, no help, **AR** (native speaker): same, plus copy clarity and register | | |
 | Bilingual reviewer reads every AR string (`content/ar.json`) | | |
 | Real laptop: face FPS in Camera and in Practice (`?dev=1`), low-end machine included | | |

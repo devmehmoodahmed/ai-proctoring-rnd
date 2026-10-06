@@ -6,8 +6,9 @@ browser runs on 2026-09-23; its manual test matrix (real picker, multi-monitor, 
 permission, other browsers, real network) is still pending. POC #8 (practice /
 onboarding simulator, Section 28) was implemented on 2026-09-29 and verified on
 2026-09-30 with 29 unit tests and an 18-scenario automated browser suite, all passing
-(Section 28.10). Its manual matrix (real candidates, especially Arabic speakers) is
-still pending, and it reopened decision D2 on face counting (finding F6). The written test-matrix
+(Section 28.10). A manual team run in English on 2026-10-06 finished in ~2–3 minutes
+with every check passing. The rest of its manual matrix (real first-time candidates,
+especially Arabic speakers) is still pending, and it reopened decision D2 on face counting (finding F6). The written test-matrix
 results for POC #1–#4/#6 are not yet recorded here (Section 18 and the Results
 subsections under Section 22–25). Record them before treating those POCs as fully
 validated. **POC #7 saves real recorded video to local disk; see its README before
@@ -504,7 +505,7 @@ Decision Log for status.
 | 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual matrix pending |
 | 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; written results pending |
 | 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26 |
-| 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, manual matrix (real candidates) pending |
+| 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, team EN run passed (2026-10-06), manual matrix (real candidates) pending |
 
 ## 17. POC #1
 
@@ -1570,7 +1571,7 @@ Run long suites under `caffeinate`.
 | Survives reload mid-flow | `happy_en` reloads at the screen step | **Pass.** It resumes at Screen with device/camera/mic results kept |
 | Report accepted by POC #6 unchanged | `report_into_poc6` | **Pass** (HTTP 201, stored as `READINESS_REPORT`). POC #6 then stores it as `ALERTED`, which F9 addresses |
 | Real-time with face + VAD + phone | `?dev=1` metrics in the happy paths | Face Landmarker **~11 fps, ~50 ms per frame** (GPU delegate). Phone detector ~220 ms per call, one call every ~880–900 ms (the duty cycle, F4). Headless numbers; laptop numbers are in the manual matrix |
-| First-time candidate unaided in < ~5 min | — | **Not tested yet: manual only** |
+| First-time candidate unaided in < ~5 min | Manual team run, 2026-10-06 (EN, macOS, real camera/mic/screen) | **Partly tested.** Welcome → Summary in ~2–3 min, all six checks passed, no problems. The tester knew the app, so real first-time EN and AR candidates are still needed |
 
 **Measured load times** (cold cache per scenario, since each launch is a fresh
 browser profile): face model 0.1–7.9 s, phone model 7.8–15.5 s, VAD 0.3–5.0 s, and
