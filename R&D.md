@@ -2,11 +2,19 @@
 
 Status (2026-10-06): **All eight POCs are implemented and committed.**
 
-- **POC #1–#4:** manual pass/fail results recorded on 2026-10-27 (Section 18 and the
-  Results subsections of Sections 22–24). Every scenario that was run passed. The
-  tester reports timings close to the configured defaults, and the tables show those
-  expected values. FPS and decoy labels weren't written down, and a few rows (older
-  webcam, head covering) weren't run.
+- **POC #1–#4:** pass/fail results recorded on 2026-10-27 (Section 18, Sections
+  22–24). The same day, **measured results** were added (the "Measured results for POC #1–#4" section, after
+  Section 24):
+  - real-laptop FPS
+  - time-to-confirm
+  - false-alarm counts from real-person sessions (#1: 0 in 12 min; #2 calibrated:
+    ~4.2 per 10 min; #4: 0 in 5 min silent)
+  - POC #3 decoy labels: all decoys flagged as `cell phone`
+  - 20-trial phone recall (90%)
+
+  **Automatic Exam Pause Option C is not viable with the current phone model.**
+  Thresholds have a first measured basis but need more sessions. The older-webcam and
+  head-covering rows weren't run.
 - **POC #5 (screen capture, Section 27):** automated runs on 2026-09-23. On
   2026-10-02 and 2026-10-27, manual runs on macOS covered:
   - window/tab rejection and the macOS permission flow
@@ -426,10 +434,12 @@ decides whether to pause. Reasoning:
   black-box exam engine, network failures during the pause round-trip, and candidates
   reconnecting into an inconsistent state — none of which we can properly reason about
   without visibility into that third system's session handling.
-- Option C (very-high-confidence temporary auto-pause + mandatory proctor review) is a
-  reasonable **future** middle ground once POC #3 produces real precision/recall
-  numbers and a confidence threshold can be chosen with evidence rather than a guess.
-  We do not recommend committing to it yet.
+- Option C (very-high-confidence temporary auto-pause + mandatory proctor review) was
+  to be considered once POC #3 produced real precision/recall numbers. **They now
+  exist (2026-10-27, "Measured results for POC #1–#4"), and they rule it out for the current model.** Decoys
+  (remote, calculator, wallet) score as high as the real phone (0.41–0.72), so no
+  confidence threshold separates them. Recall was 90%. Revisit Option C only with a
+  different phone model (YOLOv8n or phone-specific) that is re-measured the same way.
 - Option B (fully automatic, no review) is not recommended at any point covered by
   this brief — the brief itself frames this as AI-assisted human proctoring, and full
   autonomous disciplinary action contradicts that framing (Section 14).
@@ -635,11 +645,10 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. ~~Record POC #1–#4's manual test-matrix results~~ **Done 2026-10-27** (pass/fail).
-   Still missing from that run, and needed before choosing production thresholds or
-   revisiting Automatic Exam Pause:
-   - measured timings and false-positive counts from the exported event logs
-   - what each POC #3 decoy was labeled as
+1. ~~Record POC #1–#4's results~~ **Done 2026-10-27.** Pass/fail plus measured
+   timings, FPS, false-alarm counts, decoy labels and phone recall ("Measured results for POC #1–#4"). Still open:
+   - more sessions and people before thresholds are fixed (#2's confirm window
+     especially: ~2.5–3 s looks better than 1.2 s)
    - the older-webcam and head-covering rows
 2. ~~Run POC #6's test matrix~~ **Done 2026-10-27** (automated, Section 25). Carry
    two things into production: a reconnect must *replace* dashboard state rather than
@@ -871,16 +880,20 @@ distance/angle/lighting, brief vs. sustained appearance, extended-run drift.
   face, at a steep angle, partly covered by a hand, and at the frame edge. A 0.5 s
   appearance correctly did *not* fire. 5 s of visibility fired `PHONE_DETECTED`. Dim
   light passed, and a 10+ min run showed no degradation.
-- **Decoys** (calculator, TV remote, wallet, water bottle, empty hand): none raised a
-  false `PHONE_DETECTED`. What each decoy *was* labeled as was not recorded, and that
-  was the main thing this POC set out to learn (Section 10 "Phone Detection").
+- **Decoys:** the pass/fail run reported no false alerts, but the **2026-10-27
+  screenshot test contradicts that**: the TV remote was flagged as a phone. See
+  "Measured results for POC #1–#4" below.
 - **Timing:** the tester reports measured time-to-confirm was close to the default
   1.0 s (at ≥ 0.40 confidence). The README shows those expected values. Not written
   down: phone confidence values, FPS and memory. Headless fake-camera latency was
   ~57 ms per frame (2026-10-15).
-- **Still open:** a pass/fail run doesn't give the precision/recall figures the
-  Automatic Exam Pause decision is waiting on (Decision Log, Option C). That needs a
-  counted, logged run.
+- **Measured since (2026-10-27, "Measured results for POC #1–#4"):**
+  - the remote, calculator, wallet and a bottle-shaped object were all flagged as
+    `cell phone`
+  - the real phone was caught in 18 of 20 trials
+  - phone and decoys score in the same 0.41–0.72 range
+
+  Option C is not viable with this model.
 
 ## 24. POC #4 — Speaking / Voice Activity Detection
 
@@ -969,6 +982,136 @@ mic, extended-run drift.
   CPU.
 - **Still open:** VAD detects *that* someone is speaking, not *what*. It can't tell
   reading a question aloud from other speech (Section 10).
+
+### Measured results for POC #1–#4 (2026-10-27)
+
+These are measurements, not expected values.
+
+**Real laptop**, the tester's Mac in Chrome, with POC #1, #2 and #3 running at the
+same time (screenshot readings):
+
+| POC | FPS | Inference (avg) |
+|---|---|---|
+| #1 face (BlazeFace) | 24.7 | 38.9 ms |
+| #2 head pose (Face Landmarker) | 23.7 | 40.3 ms |
+| #3 phone (EfficientDet-Lite0) | **6.0** | **165.7 ms** |
+
+POC #3 is the bottleneck when the models run together, which supports moving
+inference to a worker (Section 28.13). POC #3 also showed what the object detector
+labels in an ordinary room: `person` 0.95, `dining table` 0.20, `chair` 0.10–0.13. No
+phone was falsely detected.
+
+**Headless Chrome with standard test videos** (Xiph CIF clips via Chrome's fake
+camera; status sampled every 20 ms):
+
+| Test | Video | Duration | Result |
+|---|---|---|---|
+| #1 time-to-confirm `FACE_MISSING` | `foreman` (face, then camera pans away) | 90 s | 4 confirmations, **median 1.51 s** (1.45–1.55 s) vs the 1.5 s setting |
+| #1 `MULTIPLE_FACES` | `mother_daughter` (two people) | 90 s | Detected at 0.96 and held for the full run. Time-to-confirm not captured |
+| #1 false alerts, one still face | `akiyo` | 90 s | **0** |
+| #1 false alerts, dark scene (25% brightness) | `akiyo_dark` | 90 s | **0**, face still detected |
+| #2 false alerts, one still face, **uncalibrated** | `akiyo` | 90 s | **12 `LOOKING_AWAY`** (pitch 15.6–18.3°, just over the 15° limit), about 8/min |
+| #2 face leaving frame | `foreman` | 90 s | 0 `LOOKING_AWAY`, which is correct: no face means no pose |
+| #4 false segments, silence | `silence.wav` | 90 s | **0** |
+| #4 speech | `speech_en.wav` | 95 s | 0 segments. **Inconclusive**: the manual run did detect speech, so the fake audio input probably wasn't picked up. Not counted as a result |
+
+**What this shows:**
+- POC #1's timing matches its setting.
+- POC #1 doesn't false-alarm on a still face, even in low light.
+- **POC #2 without calibration produces false "looking away" alerts on a camera angle
+  alone.** Calibration must be mandatory in production. A calibrated false-alert rate
+  hasn't been measured yet.
+
+**POC #3 phone vs decoys, real webcam** (POC #3 running alone: 14.0 FPS, ~70 ms;
+screenshots plus the event log, 2026-10-27, default threshold 0.40):
+
+| Object held up | Live label | Confidence at alert | Result |
+|---|---|---|---|
+| **Real phone** (confirmed by tester) | `cell phone` 0.57 | – | `PHONE_DETECTED` (correct) |
+| **TV remote** (confirmed by tester) | `cell phone` **0.65** | **0.70** | `PHONE_DETECTED`: **false alarm** |
+| Bottle-shaped object (as seen on camera, not named by tester) | `cell phone` 0.61 | – | `PHONE_DETECTED`: false alarm |
+| Black flat object (not named by tester) | `cell phone` 0.61 | – | `PHONE_DETECTED` |
+
+The tester also reports that the **calculator and wallet** were labelled `cell phone`
+and raised `PHONE_DETECTED` the same way. Their individual confidences weren't
+recorded separately.
+
+The event log shows each object held well past the 1 s confirm window: four alerts,
+logged at 0.54, 0.52, 0.48 and 0.70. No object was ever labelled `remote` or
+`bottle`. Weaker `cell phone` guesses also appeared on a ceiling light (0.13) and a
+background item (0.22), below the threshold.
+
+**Conclusion:** a confirmed decoy (the remote) scored **higher** than the real phone
+(0.65–0.70 vs 0.57). No confidence threshold separates them: raising it enough to
+silence the remote would also miss the phone. **Automatic Exam Pause Option C is not
+viable with EfficientDet-Lite0.** This supports keeping Option A (alert only, proctor
+decides) and points to the documented fallback model (YOLOv8n) or a phone-specific
+model if phone detection is to carry more weight. One phone and one confirmed decoy
+is a small sample, but a single decoy outscoring the phone already rules out a
+threshold-based auto-pause.
+
+**Real-person session, 14:23–14:35 PKT (12 min), 2026-10-27.** The tester's Mac in
+Chrome, with POC #1, #2 (calibrated) and #4 running together in visible windows. The
+tester read, typed and behaved normally, and also spoke during the session. Counts
+are from the exported event logs. Alerts during setup (before 14:23) are excluded.
+
+| Detector | Alerts in 12 min | Rate | Detail |
+|---|---|---|---|
+| #1 face presence | **0** | 0 per 10 min | No false `FACE_MISSING` / `OUT_OF_FRAME` / `MULTIPLE_FACES` |
+| #2 head pose (calibrated) | **5 false alerts** | **~4.2 per 10 min** | yaw 31.5° + pitch −17.1°; yaw 20.7°; pitch 30.7°; pitch 25.4°; pitch 30.5°. Alert durations after confirmation: 2.7, 0.9, 1.2, 0.9, 1.3 s |
+| #4 speech | 4 segments (4.5–18.7 s) | n/a | **Correct detections.** The tester spoke during the session, so this run gives no false-alarm rate for #4 |
+
+**What this shows:**
+- POC #1 had no false alarms from a real person over 12 minutes.
+- POC #2, even calibrated, raises about 4 false "looking away" alerts per 10 minutes
+  of normal behaviour. Three were downward pitch of 25–31°. That fits glancing at the
+  keyboard, but the cause wasn't recorded.
+- `durationMs` is measured from confirmation, so each look-away lasted the 1.2 s
+  confirm window plus that duration: about 2.1–2.5 s for four of them, and ~3.9 s for
+  one. **A confirm window of ~2.5–3 s would have cut this session's 5 alerts to 1–2.**
+  That's a measured starting point for tuning, not a decision. One session is a small
+  sample.
+- POC #4 detected all of the candidate's speech.
+
+**Silent session for #4, 14:40–14:45 PKT (5 min), 2026-10-27.** POC #4 ran alone in
+the tester's open office, and the tester didn't speak. **0 speech segments and 0
+discarded sounds**: the export is empty, and the page showed "Listening — silent" at
+probability 0.00. So the measured false-alarm rate is **0 per 5 min** of silent work in
+a real office (and 0 per 90 s on the silence test file). Whether colleagues talked
+nearby during those 5 minutes wasn't recorded.
+
+**Phone recall, 20 trials, 14:48–15:07 PKT, 2026-10-27.** POC #3 ran alone at the
+default 0.40 threshold and 1000 ms confirm. Each trial held the real phone in view
+for ~3 s, then fully out of view. Alerts are mapped to trials in order, per the
+tester's grouping. The 4 decoy alerts from 14:11–14:13 left in the same export are
+excluded.
+
+| Trials | How the phone was held | Caught | Confidence at alert |
+|---|---|---|---|
+| 1–5 | Screen facing the camera | 5 / 5 | 0.52–0.59 |
+| 6–10 | **Back to the camera, pointed at the screen as if photographing it** | **5 / 5** | 0.53–0.71 |
+| 11–15 | Tilted ~45° / partly turned away | 5 / 5 | 0.43–0.72 |
+| 16–20 | Low in the frame, near the desk edge / lap | **3 / 5** | 0.41–0.72 |
+| **Total** | | **18 / 20 = 90% recall** | 0.41–0.72 |
+
+- **The "photographing the screen" scenario (Andy's request) was caught 5 of 5.**
+- Misses were all low in the frame. Which two trials in 16–20 were missed isn't
+  known from the log.
+- Two alerts barely cleared the threshold (0.43 and 0.41).
+- No trial fired twice: each alert lasted 1.5–3.7 s, with at least 35 s between alerts.
+- **The real phone (0.41–0.72) and the decoys (0.48–0.70) score in the same range.**
+  This confirms, over 20 trials, that no confidence threshold separates them. 90%
+  recall is also below the ≥ 95% an automatic pause would need. Option C stays not
+  viable with this model. As an alert for a proctor to review (Option A), the
+  detector is useful, especially for the screen-photographing case.
+
+**Still not measured:**
+- longer or repeated sessions, and more people, before fixing thresholds
+
+Option C is answered: not with this model. Production thresholds now have a first
+measured basis: #1 at 0 false alarms per 12 min, #2 at ~4.2 per 10 min at a 1.2 s
+confirm window, and #4 at 0 per 5 min silent (it caught all real speech). They still
+need more sessions before they're fixed.
 
 ## 25. POC #6 — Real-Time Events → Proctor Dashboard
 
@@ -1912,6 +2055,7 @@ The "< 5 minutes unaided" criterion is **partly met**: it holds for technical us
 | 2026-09-29 | Arabic digits | Browser default, Latin (`nu-latn`), Arabic-Indic (`nu-arab`) | Pinned Latin, configurable in content `meta` | Browser defaults differ by region tag and version. Latin is the likely convention of the exam engine | Proposed — Open Question #10 |
 | 2026-09-29 | Readiness hand-off to the proctor | None, JSON download, POST to backend | JSON download in the POC, same shape as a POC #6 event (accepted unchanged by `POST /events`) | Keeps the POC unwired. Production needs its own non-alert event type (Section 28.10, F9) | Proposed |
 | 2026-10-27 | Arabic-speaker testing of POC #8 | Test with native Arabic speakers now, defer, drop Arabic | Defer. Validate the unaided flow with English first-time candidates first | No Arabic-speaking testers or bilingual reviewer available to the team. Arabic remains machine-drafted, unvalidated and not for real candidates (D7); Andy's Arabic-onboarding concern stays open | Approved for R&D phase |
+| 2026-10-27 | Automatic Exam Pause Option C, re-evaluated with measured POC #3 data | Adopt Option C, keep Option A, change the phone model first | **Keep Option A** (alert only, proctor decides). Option C is not viable with EfficientDet-Lite0 | Decoys (remote, calculator, wallet) are labelled `cell phone` and score in the same 0.41–0.72 range as the real phone, so no threshold separates them. Recall was 18/20 (90%), and 5/5 for photographing the screen. Revisit only with a different model, measured the same way | Approved for R&D phase |
 
 ## Experiment Log
 
