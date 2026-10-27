@@ -61,6 +61,11 @@ async function start() {
       audio: false,
     });
     els.video.srcObject = stream;
+    // Don't start recording until the camera has delivered a frame. A real webcam
+    // can take a moment to warm up, and a segment recorded before the first frame
+    // is a header-only WebM (~100 bytes) that fails to open
+    // (DEMUXER_ERROR_COULD_NOT_OPEN), so the first clip would lose its first second.
+    await waitForFirstFrame();
 
     mimeType = pickSupportedMimeType();
     segments = [];
@@ -91,6 +96,11 @@ function stop() {
   els.stopBtn.disabled = true;
   els.bufferVal.textContent = "–";
   setLiveStatus("idle", "Camera not started");
+}
+
+function waitForFirstFrame() {
+  if (els.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return Promise.resolve();
+  return new Promise((resolve) => els.video.addEventListener("loadeddata", resolve, { once: true }));
 }
 
 function pickSupportedMimeType() {
@@ -160,14 +170,17 @@ function triggerCapture(eventType) {
   if (!running) return;
   if (capturing) return; // ignore new triggers while a capture is already in progress
   capturing = true;
-  pendingCapture = { eventType, triggerTime: performance.now() };
+  // triggerTime (monotonic) selects segments; triggeredAt (wall clock) is what gets
+  // stored as the evidence timestamp — it must be the moment of the alert, not the
+  // upload, which happens a whole post-roll later.
+  pendingCapture = { eventType, triggerTime: performance.now(), triggeredAt: new Date().toISOString() };
   const postRollS = Number(els.cfgPostRoll.value);
   setLiveStatus("warning", `⚠ ${eventType} — capturing clip, ${postRollS}s remaining…`);
   setTimeout(finishCapture, postRollS * 1000);
 }
 
 async function finishCapture() {
-  const { eventType, triggerTime } = pendingCapture;
+  const { eventType, triggerTime, triggeredAt } = pendingCapture;
   const preRollS = Number(els.cfgPreRoll.value);
   const postRollS = Number(els.cfgPostRoll.value);
   const windowStart = triggerTime - preRollS * 1000;
@@ -185,10 +198,10 @@ async function finishCapture() {
   pruneOldSegments();
   setLiveStatus("present", `Uploading ${selected.length} clip segment(s) to local disk…`);
 
-  await uploadClip(selected, eventType, preRollS, postRollS);
+  await uploadClip(selected, eventType, triggeredAt, preRollS, postRollS);
 }
 
-async function uploadClip(blobs, eventType, preRollS, postRollS) {
+async function uploadClip(blobs, eventType, triggeredAt, preRollS, postRollS) {
   if (blobs.length === 0) {
     setLiveStatus("idle", "⚠ No segments captured — buffer wasn't ready yet");
     return;
@@ -202,7 +215,7 @@ async function uploadClip(blobs, eventType, preRollS, postRollS) {
         capture_id: captureId,
         part_index: String(i),
         event_type: eventType,
-        trigger_time: new Date().toISOString(),
+        trigger_time: triggeredAt,
         pre_roll_s: String(preRollS),
         post_roll_s: String(postRollS),
       });
@@ -239,20 +252,27 @@ async function refreshClipList() {
 }
 
 function renderClipList(clips) {
-  els.clipList.innerHTML = "";
+  els.clipList.replaceChildren();
   [...clips].reverse().forEach((clip) => {
     const card = document.createElement("div");
     card.className = "clip-card";
     const partCount = clip.parts ? clip.parts.length : 0;
-    card.innerHTML = `
-      <video controls></video>
-      <div class="meta">
-        <div><strong>${clip.event_type}</strong> · #${clip.id}</div>
-        <div>${formatBytes(clip.total_bytes)} · pre-roll ${clip.pre_roll_s}s / post-roll ${clip.post_roll_s}s · ${partCount} segment${partCount === 1 ? "" : "s"}</div>
-        <div>${new Date(clip.uploaded_at).toLocaleTimeString()}</div>
-      </div>
-    `;
-    const videoEl = card.querySelector("video");
+    // Built with textContent: event_type is client-supplied metadata stored by the
+    // server, and must never be parsed as HTML.
+    const videoEl = document.createElement("video");
+    videoEl.controls = true;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const title = document.createElement("div");
+    const type = document.createElement("strong");
+    type.textContent = clip.event_type;
+    title.append(type, ` · #${clip.id}`);
+    const sizes = document.createElement("div");
+    sizes.textContent = `${formatBytes(clip.total_bytes)} · pre-roll ${clip.pre_roll_s}s / post-roll ${clip.post_roll_s}s · ${partCount} segment${partCount === 1 ? "" : "s"}`;
+    const times = document.createElement("div");
+    times.textContent = `alert ${new Date(clip.trigger_time).toLocaleTimeString()} · saved ${new Date(clip.uploaded_at).toLocaleTimeString()}`;
+    meta.append(title, sizes, times);
+    card.append(videoEl, meta);
     if (clip.parts && clip.parts.length) setupSequentialPlayback(videoEl, clip.parts);
     els.clipList.appendChild(card);
   });

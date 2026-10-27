@@ -32,8 +32,13 @@ function connect() {
     setConnectionStatus("warning", "⚠ Reconnecting…");
   };
 
+  // The backlog is the server's full current state, sent on every (re)connect.
+  // Replace local state rather than merging into it: after a server restart the
+  // old events are gone and ids start again at 1, so merging would keep stale
+  // cards and let new events silently overwrite them.
   source.addEventListener("backlog", (e) => {
     const backlog = JSON.parse(e.data);
+    eventsById.clear();
     backlog.forEach((ev) => eventsById.set(ev.id, ev));
     renderFeed();
   });
@@ -91,20 +96,28 @@ function renderFeed() {
     all.filter((ev) => ev.status === "ALERTED" || ev.status === "ACKNOWLEDGED").length
   );
 
-  els.feed.innerHTML = "";
+  els.feed.replaceChildren();
   all.forEach((ev) => {
-    const card = document.createElement("div");
-    card.className = "event-card";
+    const card = el("div", "event-card");
     const actions = ACTIONS_BY_STATUS[ev.status] || [];
-    card.innerHTML = `
-      <div class="meta">
-        <span class="type">${ev.event_type} <span class="badge ${ev.status}">${ev.status}</span></span>
-        <span class="detail">${ev.detail || ""}${ev.confidence != null ? ` — confidence ${Number(ev.confidence).toFixed(2)}` : ""}</span>
-        <span class="timing">#${ev.id} · ${ev.session_id} · ${new Date(ev.server_received_at).toLocaleTimeString()} · delivered in ${ev.server_received_at - ev.client_sent_at}ms</span>
-      </div>
-      <div class="actions"></div>
-    `;
-    const actionsEl = card.querySelector(".actions");
+    // event_type, detail and session_id come from the candidate side, so they are
+    // only ever set as text — never parsed as HTML in the proctor's browser.
+    const badge = el("span", `badge ${ev.status}`, ev.status);
+    const type = el("span", "type", `${ev.event_type} `);
+    type.appendChild(badge);
+    const confidence = ev.confidence != null ? ` — confidence ${Number(ev.confidence).toFixed(2)}` : "";
+    const meta = el("div", "meta");
+    meta.append(
+      type,
+      el("span", "detail", `${ev.detail || ""}${confidence}`),
+      el(
+        "span",
+        "timing",
+        `#${ev.id} · ${ev.session_id} · ${new Date(ev.server_received_at).toLocaleTimeString()} · delivered in ${ev.server_received_at - ev.client_sent_at}ms`
+      )
+    );
+    const actionsEl = el("div", "actions");
+    card.append(meta, actionsEl);
     actions.forEach(([action, label]) => {
       const btn = document.createElement("button");
       btn.textContent = label;
@@ -113,6 +126,13 @@ function renderFeed() {
     });
     els.feed.appendChild(card);
   });
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
 }
 
 connect();

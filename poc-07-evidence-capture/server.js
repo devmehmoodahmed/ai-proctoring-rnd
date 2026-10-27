@@ -12,6 +12,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const PORT = process.env.PORT || 8020;
 const ROOT = __dirname;
@@ -26,10 +27,18 @@ const MIME = {
   ".webm": "video/webm",
 };
 
-let nextId = 1;
 const clips = []; // in-memory metadata; files themselves live on disk in clips/
 // Each clip is a *sequence* of independently-playable segment files, not one blob —
 // see the note at the top of app.js for why a single concatenated file doesn't work.
+
+// Clip files outlive this process but the metadata above doesn't, so ids must be
+// unique across restarts. A counter that restarts at 1 reused filenames and
+// silently overwrote evidence saved before the restart.
+function newClipId() {
+  return `${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
+}
+
+const CLIP_FILE = /^clip-[a-z0-9-]+-part\d+\.(webm|bin)$/;
 
 function sendJson(res, status, body) {
   const data = JSON.stringify(body);
@@ -96,7 +105,7 @@ const server = http.createServer(async (req, res) => {
     let clip = clips.find((c) => c.capture_id === captureId);
     if (!clip) {
       clip = {
-        id: nextId++,
+        id: newClipId(),
         capture_id: captureId,
         event_type: searchParams.get("event_type") || "UNKNOWN",
         detail: searchParams.get("detail") || null,
@@ -122,12 +131,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "DELETE" && pathname === "/evidence") {
-    clips.forEach((c) => {
-      c.parts.forEach((filename) => {
-        const p = path.join(CLIPS_DIR, filename);
-        if (fs.existsSync(p)) fs.unlinkSync(p);
-      });
-    });
+    // Delete every clip file on disk, not just the ones this process knows about —
+    // files saved before a restart aren't in `clips` but are still real recordings.
+    fs.readdirSync(CLIPS_DIR)
+      .filter((filename) => CLIP_FILE.test(filename))
+      .forEach((filename) => fs.unlinkSync(path.join(CLIPS_DIR, filename)));
     clips.length = 0;
     return sendJson(res, 200, { cleared: true });
   }
