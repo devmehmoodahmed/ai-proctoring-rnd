@@ -119,24 +119,26 @@ the mic opens), so a microphone warning can be diagnosed from `e2e-results.json`
 These need real people, real hardware or real rooms, which the automated run can't
 provide.
 
+**Manual run, 2026-10-27** (macOS; Chrome unless the row names another browser): the tester reported every row they ran as working. Figures (latency, bitrate, FPS) were not recorded; rows needing hardware or people we didn't have are *Not tested*.
+
 | Scenario | Worked? | Notes |
 |---|---|---|
-| First-time candidate, no help, EN: time to finish (target < ~5 min), where they hesitated | Partly | 2026-10-06, team run on macOS with real camera, mic and screen: Welcome → Summary in ~2–3 min, all six checks passed, no problems. The tester knew the app, so a real first-time candidate is still needed |
-| First-time candidate, no help, **AR** (native speaker): same, plus copy clarity and register | | |
-| Bilingual reviewer reads every AR string (`content/ar.json`) | | |
-| Real laptop: face FPS in Camera and in Practice (`?dev=1`), low-end machine included | | |
-| Real laptop, candidate moves left/right/closer: hints point the right way (mirrored preview) | | |
-| Dim room / window behind candidate: `TOO_DARK` / `BACKLIT` shown? false alarms in normal light? | | |
-| Glasses, hijab / head covering, beard: framing, calibration and look-away still OK? | | |
-| Practice: turn head away 3 s → `LOOKING_AWAY` nudge + example alert | | |
-| Practice: hold up a phone → `PHONE_DETECTED`; hold a calculator/remote → none? | | |
-| Practice: speak / cough / type → speech nudge only for speech | | |
-| Screen: real picker, choose a window, a tab, then the entire screen | | |
-| macOS, Screen Recording permission off: guidance shown; after Quit & Reopen, resumes at Screen | | |
-| Real second monitor connected → `MULTIPLE_MONITORS` warning | | |
-| Firefox / Safari / Edge on Windows: every step, especially the screen surface check | | |
-| Screen reader (VoiceOver / NVDA): steps, statuses and nudges announced sensibly | | |
-| Network that blocks jsDelivr: device step explains it clearly | | |
+| First-time candidate, no help, EN: time to finish (target < ~5 min), where they hesitated | ⚠️ Partly (2 of 3 under target) | **2026-10-27, three first-time people, unaided, EN:** two technical users finished in 3–4 min and one non-technical user in ~6 min, so the target was missed for the non-technical user. No hesitations were observed, nobody used *Skip — I need help*, and all three said it was easy. All used Chrome. Device and summary results weren't reported. *(Earlier: 2026-10-06 team run by someone who knew the app took ~2–3 min.)* |
+| First-time candidate, no help, **AR** (native speaker): same, plus copy clarity and register | Deferred | 2026-10-27: no Arabic-speaking testers available. See the R&D.md Decision Log |
+| Bilingual reviewer reads every AR string (`content/ar.json`) | Deferred | 2026-10-27: no bilingual reviewer available. The Arabic copy stays machine-drafted (`meta.translation_status`) and must not reach real candidates until reviewed |
+| Real laptop: face FPS in Camera and in Practice (`?dev=1`), low-end machine included | ⚠️ Partly | Ran on the tester's Mac; FPS not recorded. Low-end machine not tested |
+| Real laptop, candidate moves left/right/closer: hints point the right way (mirrored preview) | ✅ Yes |  |
+| Dim room / window behind candidate: `TOO_DARK` / `BACKLIT` shown? false alarms in normal light? | ✅ Yes | No false alarms observed in normal light |
+| Glasses, hijab / head covering, beard: framing, calibration and look-away still OK? | ⚠️ Partly | Glasses on/off OK. Hijab/head covering not tested; beard not recorded |
+| Practice: turn head away 3 s → `LOOKING_AWAY` nudge + example alert | ✅ Yes |  |
+| Practice: hold up a phone → `PHONE_DETECTED`; hold a calculator/remote → none? | ✅ Yes | Phone flagged; decoy not flagged |
+| Practice: speak / cough / type → speech nudge only for speech | ✅ Yes | Speech nudge only for speech |
+| Screen: real picker, choose a window, a tab, then the entire screen | ✅ Yes | Window and tab rejected, entire screen accepted |
+| macOS, Screen Recording permission off: guidance shown; after Quit & Reopen, resumes at Screen | Not tested |  |
+| Real second monitor connected → `MULTIPLE_MONITORS` warning | Not tested |  |
+| Firefox / Safari / Edge on Windows: every step, especially the screen surface check | ⚠️ Partly | Firefox and Safari: every step worked; screen-surface details not recorded. Edge on Windows not tested |
+| Screen reader (VoiceOver / NVDA): steps, statuses and nudges announced sensibly | ⚠️ Partly | VoiceOver: steps and statuses read out sensibly. NVDA not tested |
+| Network that blocks jsDelivr: device step explains it clearly | Not tested |  |
 
 ## Known limitations
 

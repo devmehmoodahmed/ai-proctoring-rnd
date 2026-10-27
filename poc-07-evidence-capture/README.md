@@ -149,18 +149,20 @@ node server.js
 
 ## Test matrix (fill in while testing, then summarize into `R&D.md`)
 
+**Automated run, 2026-10-27**: headless Chrome 155 on macOS with Chrome's fake camera drove the real `index.html` through the DevTools protocol. Pre/post-roll is measured from the recorder's segment timestamps, and clip durations from the saved files. It is not judged by eye. Script and raw output aren't committed.
+
 | Scenario | Worked as expected? | Notes |
 |---|---|---|
-| Simulate an alert right after the buffer says "ready" — does the clip actually start ~pre-roll seconds before the click? | | |
-| Simulate an alert too early (before buffer is full) — less pre-roll than requested, not an error | | |
+| Simulate an alert right after the buffer says "ready" — does the clip actually start ~pre-roll seconds before the click? | ✅ Yes (automated) | Pre-roll requested 5 s, actual 4.1 s (1 s segment granularity); clip media duration 8.5 s across 9 segments. Note: the saved trigger_time is 5.0 s *after* the real click — app.js sends new Date() at upload time, not the trigger time. Across runs, pre-roll came out 0–1 s short (4.1–5.0 s for 5 s) and post-roll ~1 s short, because only whole 1 s segments are kept and the last one isn't stored yet when the capture closes |
+| Simulate an alert too early (before buffer is full) — less pre-roll than requested, not an error | ✅ Yes (automated) | Triggered 2 s after camera start: clip saved without error with 1.8 s of pre-roll (5 s requested), 6 segments. But that clip's first segment can't be decoded (see the 'several clips' row) |
 | Play back a saved clip — does it actually play (not blank/frozen), across all segments? | ✅ Confirmed 2026-09-23 | Real playback and segment progression work; the "0:00" label is a known cosmetic issue only, see README |
-| Play back a saved clip — is the trigger moment visibly in the middle, not at the very start/end? | | |
-| Try clicking a second "simulate" button while a capture is already in progress (should be ignored) | | |
-| Change pre-roll/post-roll settings, restart camera, capture again | | |
-| Capture several clips in a row — does the clip list and playback all work? | | |
-| Clear all clips — do they disappear from both the UI and the `clips/` folder on disk? | | |
-| Stop and restart `server.js` — do previously saved clip files remain on disk (even though the in-memory list resets)? | | |
-| Extended run (10+ min, buffer continuously filling/discarding) — any memory growth or dropped frames? | | |
+| Play back a saved clip — is the trigger moment visibly in the middle, not at the very start/end? | ✅ Yes (automated) | Trigger sits at 4.1 s of a ~9.1 s window (5.0 s after), so it's in the middle. Measured from segment timestamps with a fake camera, not by watching the footage |
+| Try clicking a second "simulate" button while a capture is already in progress (should be ignored) | ✅ Yes (automated) | Two clicks 0.5 s apart → 1 clip (LOOKING_AWAY); the second click was ignored |
+| Change pre-roll/post-roll settings, restart camera, capture again | ✅ Yes (automated) | Set 3 s / 8 s → actual 2.0 s / 7.0 s; server metadata 3/8 |
+| Capture several clips in a row — does the clip list and playback all work? | ⚠️ Partly (automated) | 7 clips on the server, 7 cards in the UI; every segment decoded except the very first segment recorded after camera start (clip-1-part0.webm: DEMUXER_ERROR_COULD_NOT_OPEN). Same result in two separate runs, so an early clip loses its first ~1 s. Needs re-checking with a real webcam |
+| Clear all clips — do they disappear from both the UI and the `clips/` folder on disk? | ⚠️ Partly (automated) | UI cards: 0; files left on disk: 52 — Clear only deletes clips the *current* server process knows about; pre-restart files are orphaned (clip-2-part0.webm, clip-2-part1.webm, clip-2-part2.webm…) |
+| Stop and restart `server.js` — do previously saved clip files remain on disk (even though the in-memory list resets)? | ⚠️ Partly (automated) | All 58 files were still on disk after the restart, and the server list reset to 0. **Bug:** the next clip after the restart reused id #1 and overwrote 6 existing files (`clip-1-part0…5.webm`), because ids restart at 1 and files are named `clip-<id>-part<n>.webm`. Evidence from before a restart can be silently replaced |
+| Extended run (10+ min, buffer continuously filling/discarding) — any memory growth or dropped frames? | ✅ Yes (automated) | 10.5 min continuous buffering: segments held stayed ≤ 4 (pre-roll 5 s, 1 s segments); JS heap 0.8 → 0.9 MB; a clip captured at the end still had 4.6 s pre-roll and played. Dropped frames not measured |
 
 ## Known limitations of this POC
 

@@ -2,21 +2,33 @@
 
 Status (2026-10-06): **All eight POCs are implemented and committed.**
 
-- **POC #1–#4:** tested by hand by the team. The written results aren't recorded yet
-  (Section 18 and the Results subsections of Sections 22–24).
-- **POC #5 (screen capture, Section 27):** automated browser runs on 2026-09-23. A
-  manual entire-screen share in Chrome on macOS worked on 2026-10-02. The rest of its
-  manual matrix (window/tab rejection, second monitor, macOS permission, other
-  browsers, real networks, 5+ candidates) is pending.
-- **POC #6 and #7:** basic flows tested by the team. Their manual matrices (POC #6:
-  multi-tab sync, reconnect, long runs; POC #7: clip timing with a real webcam) are
-  pending. **POC #7 saves real recorded video to local disk; see its README before
+- **POC #1–#4:** manual pass/fail results recorded on 2026-10-27 (Section 18 and the
+  Results subsections of Sections 22–24). Every scenario that was run passed. The
+  tester reports timings close to the configured defaults, and the tables show those
+  expected values. FPS and decoy labels weren't written down, and a few rows (older
+  webcam, head covering) weren't run.
+- **POC #5 (screen capture, Section 27):** automated runs on 2026-09-23. On
+  2026-10-02 and 2026-10-27, manual runs on macOS covered:
+  - window/tab rejection and the macOS permission flow
+  - Firefox and Safari
+  - readability and a 30+ minute share
+
+  Figures from the manual runs weren't recorded. Still not tested: a second monitor,
+  Edge on Windows, real networks, and 5+ candidates.
+- **POC #6 and #7:** automated test-matrix runs on 2026-10-27 (Sections 25 and 26).
+  Each found a bug when the server restarts, because ids restart at 1. POC #7 also
+  stores the wrong trigger time, and its first segment after camera start can't be
+  decoded. **POC #7 saves real recorded video to local disk; see its README before
   running it.**
 - **POC #8 (practice / onboarding simulator, Section 28):** 29 unit tests and 18
   automated browser scenarios pass (2026-09-30). A manual team run in English on
-  2026-10-06 took ~2–3 minutes with every check passing. Real first-time candidates,
-  especially Arabic speakers, are still pending. It reopened decision D2 on face
-  counting (finding F6).
+  2026-10-06 took ~2–3 minutes with every check passing. The 2026-10-27 manual run
+  covered hints, lighting, practice nudges, the real screen picker, Firefox/Safari and
+  VoiceOver. Three first-time EN users found it easy with no hesitations. Two
+  technical users took 3–4 min and one non-technical user took ~6 min, so the
+  < ~5 min target is partly met. Arabic-speaker testing and the bilingual review are
+  deferred (no testers available). It reopened decision D2 on face counting
+  (finding F6).
 - **Privacy:** POC #8 found that MediaPipe ≥ 1.0.0 sends usage telemetry to Google
   (Section 28.10, F1). POC #8 and, since 2026-10-06, POC #1–#3 block it with a CSP.
 
@@ -510,14 +522,14 @@ Decision Log for status.
 
 | # | Goal | Status |
 |---|---|---|
-| 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18 |
-| 2 | Gaze / head pose | **Implemented, tested** — see Section 22; written results pending |
-| 3 | Phone/object detection | **Implemented, tested** — see Section 23; written results pending |
-| 4 | Audio/speaking detection | **Implemented, tested** — see Section 24; written results pending |
-| 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual entire-screen share passed (2026-10-02), rest of manual matrix pending |
-| 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; written results pending |
-| 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26 |
-| 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, team EN run passed (2026-10-06), manual matrix (real candidates) pending |
+| 1 | Face presence / out-of-frame / multiple faces | **Done** — Section 17/18; manual pass/fail recorded 2026-10-27 |
+| 2 | Gaze / head pose | **Implemented, tested** — see Section 22; manual pass/fail recorded 2026-10-27 |
+| 3 | Phone/object detection | **Implemented, tested** — see Section 23; manual pass/fail recorded 2026-10-27 |
+| 4 | Audio/speaking detection | **Implemented, tested** — see Section 24; manual pass/fail recorded 2026-10-27 |
+| 5 | Screen capture | **Implemented** — see Section 27; automated results recorded, manual runs 2026-10-02 and 2026-10-27; multi-monitor, Windows, real networks, 5+ candidates not tested |
+| 6 | Real-time events → proctor dashboard | **Implemented, tested** — see Section 25; automated matrix run 2026-10-27 (restart bug found) |
+| 7 | Evidence rolling-buffer recording | **Implemented, tested** — see Section 26; automated matrix run 2026-10-27 (three bugs found) |
+| 8 | Practice/onboarding simulator | **Implemented** — see Section 28; automated results recorded, team runs 2026-10-06 and 2026-10-27; real first-time EN/AR candidates pending |
 
 ## 17. POC #1
 
@@ -558,12 +570,22 @@ Recorded after manual testing — see the "Testing Notes" section of
 [poc-01-face-presence/README.md](poc-01-face-presence/README.md) for the raw
 observations log; this section is the synthesized summary.
 
-*(To be filled in immediately after manual testing is performed — see the test
-matrix in [poc-01-face-presence/README.md](poc-01-face-presence/README.md). This section is intentionally left for the human tester's observations since
-POC #1's own author, i.e. this assistant, cannot physically sit in front of a webcam
-under different lighting/distance/angle conditions. The POC ships with an in-app event
-log and a JSON export specifically so a human can run the test matrix and drop results
-here.)*
+**Manual run, 2026-10-27** (Chrome on macOS), pass/fail per row of the test matrix in
+[poc-01-face-presence/README.md](poc-01-face-presence/README.md):
+
+- 14 of 15 scenarios passed, with no false positives observed. That includes dim light,
+  backlight, close/far (`TOO_FAR`), slow exits left/right/down (`OUT_OF_FRAME`), a
+  quick exit and a 5 s face cover (`FACE_MISSING`), a 1 s hand-over-face that correctly
+  did *not* fire, a second person (`MULTIPLE_FACES`), lid angles, and a 10+ min run
+  with no degradation seen.
+- Not tested: an older/low-quality webcam.
+- **Timing:** the tester reports measured time-to-confirm was close to the configured
+  defaults (1.5 s to raise, 0.8 s to clear). The README shows those expected values,
+  not per-row stopwatch readings. FPS, inference latency and memory weren't written
+  down. The only latency figure we have is ~11 ms per frame from a headless Chrome run
+  with a fake camera (2026-10-15), which is not a real-webcam measurement.
+- **Still needed for a production decision:** measured timings and false-positive
+  counts from exported event logs, and a run on low-end hardware (Section 14).
 
 ---
 
@@ -613,30 +635,43 @@ those sections record the current best proposal, not an approved architecture.
 
 ## 21. Next Steps
 
-1. Record POC #1–#4's manual test-matrix results into Section 18 and the Results
-   subsections under Section 22/23/24 — all still blank. Testing has happened for
-   all four per the team, but the written results aren't captured in this document
-   yet, which matters for anyone reviewing this doc later without having been in the
-   room.
-2. Run POC #6's manual test matrix (see `poc-06-realtime-alerts/README.md`) — not
-   yet done. The `curl`-based verification during implementation covered the API/SSE
-   mechanism itself; it did not cover multi-tab sync, dashboard reconnect-on-refresh,
-   or extended-run behavior, which need a human with two browser tabs open.
-3. Run POC #7's manual test matrix (see `poc-07-evidence-capture/README.md`) — not
-   yet done. The `curl`-based verification during implementation covered the
-   server-side API only; real buffer timing and clip-centering need a human with a
-   real webcam. **Clear the local `clips/` folder after testing.**
+1. ~~Record POC #1–#4's manual test-matrix results~~ **Done 2026-10-27** (pass/fail).
+   Still missing from that run, and needed before choosing production thresholds or
+   revisiting Automatic Exam Pause:
+   - measured timings and false-positive counts from the exported event logs
+   - what each POC #3 decoy was labeled as
+   - the older-webcam and head-covering rows
+2. ~~Run POC #6's test matrix~~ **Done 2026-10-27** (automated, Section 25). Carry
+   two things into production: a reconnect must *replace* dashboard state rather than
+   merge into it, and cards must not use `innerHTML` with candidate data.
+3. ~~Run POC #7's test matrix~~ **Done 2026-10-27** (automated, Section 26). Fix
+   before production:
+   - store the real trigger time
+   - use unique, persistent clip ids
+   - handle the undecodable first segment
+
+   Still needed: a real-webcam check of clip timing.
 4. Resolve Open Questions #1 and #2 — they change the shape of any real
    ActionCable/S3 integration that follows POC #6/#7, and #1 (SEB) directly affects
    whether POC #5's screen viewing is needed/possible at exam time.
-5. Run the rest of POC #5's manual test matrix (`poc-05-screen-capture/README.md`).
-   The entire-screen share in Chrome on macOS passed on 2026-10-02. Still needed: real
-   window/tab rejection, a real second monitor, the macOS permission flow,
-   Firefox/Safari/Edge on Windows, a cross-machine network test, and 5+ candidates on
-   separate machines. Record results in Section 27.
-6. POC #8: run its manual matrix with real first-time candidates in EN and AR, settle
-   D2 (repeat the face-count test at 720p with two real people), and the other items
-   in Section 28.13.
+5. POC #5: window/tab rejection, the macOS permission flow, Firefox and Safari passed
+   by hand on 2026-10-27 (Section 27).
+   - Still needed:
+     - a real second monitor and the monitor-change rows
+     - Edge on Windows
+     - a cross-machine network test (STUN/TURN)
+     - 5+ candidates on separate machines
+   - Also record whether Firefox/Safari report `displaySurface`, and whether OS
+     notifications are visible to the proctor.
+6. POC #8: team runs passed (2026-10-06, 2026-10-27).
+   - Still needed:
+     - more non-technical first-time candidates in EN, timed per step. Three people
+       have run it so far (3–4 min technical, ~6 min non-technical); AR is deferred
+       (Decision Log, 2026-10-27)
+     - a bilingual review of `content/ar.json` (deferred, same reason)
+     - a low-end laptop, head coverings, and NVDA
+   - Settle D2: repeat the face-count test at 720p with two real people.
+   - The other items in Section 28.13.
 7. Get answers to the policy and compliance questions in Section 20 (#7–#14),
    especially the real exam rules (#11) and third-party requests (#12).
 
@@ -741,9 +776,23 @@ lighting / low-end webcam / calibrated vs. uncalibrated / extended-run drift.
 
 ### POC #2 Results
 
-*(Pending — same as POC #1's Section 18, this needs a human to actually run the test
-matrix in [poc-02-gaze-headpose/README.md](poc-02-gaze-headpose/README.md) in front of
-a webcam. Drop the synthesized results here once that's done.)*
+**Manual run, 2026-10-27** (Chrome on macOS), pass/fail per row of the test matrix in
+[poc-02-gaze-headpose/README.md](poc-02-gaze-headpose/README.md):
+
+- 16 of 18 scenarios passed, with no false positives observed: head turns left/right,
+  down at notes and up; near-profile yaw; a 0.5 s glance that correctly did *not*
+  fire; a 5 s look-away (`LOOKING_AWAY`); reading/typing drift without false alerts;
+  glasses on and off; dim light; lid angles; calibrated vs uncalibrated; pose axes
+  moving the expected way; and a 10+ min run with no degradation seen.
+- The "second monitor" rows were run as head turns in that direction. Whether a
+  physical second monitor was used wasn't recorded.
+- Not tested: hijab/head covering, and an older webcam. The head-covering row matters
+  for this candidate population (Open Question #13).
+- **Timing:** the tester reports measured time-to-confirm was close to the default
+  1.2 s (past 20° yaw / 15° pitch). The README shows those expected values. Not
+  written down: yaw/pitch at trigger, false-positive *rates* for the calibration
+  comparison, FPS and memory. Headless fake-camera latency was ~16 ms per frame
+  (2026-10-15).
 
 ## 23. POC #3 — Phone / Object Detection
 
@@ -815,10 +864,23 @@ distance/angle/lighting, brief vs. sustained appearance, extended-run drift.
 
 ### POC #3 Results
 
-*(Pending — same as POC #1/#2, this needs a human to actually run the test matrix in
-[poc-03-phone-object/README.md](poc-03-phone-object/README.md) in front of a webcam
-with real objects, especially the decoy-object rows. Drop the synthesized results
-here once that's done.)*
+**Manual run, 2026-10-27** (Chrome on macOS), pass/fail per row of the test matrix in
+[poc-03-phone-object/README.md](poc-03-phone-object/README.md):
+
+- All 15 scenarios passed. The phone was detected held up, flat on the desk, near the
+  face, at a steep angle, partly covered by a hand, and at the frame edge. A 0.5 s
+  appearance correctly did *not* fire. 5 s of visibility fired `PHONE_DETECTED`. Dim
+  light passed, and a 10+ min run showed no degradation.
+- **Decoys** (calculator, TV remote, wallet, water bottle, empty hand): none raised a
+  false `PHONE_DETECTED`. What each decoy *was* labeled as was not recorded, and that
+  was the main thing this POC set out to learn (Section 10 "Phone Detection").
+- **Timing:** the tester reports measured time-to-confirm was close to the default
+  1.0 s (at ≥ 0.40 confidence). The README shows those expected values. Not written
+  down: phone confidence values, FPS and memory. Headless fake-camera latency was
+  ~57 ms per frame (2026-10-15).
+- **Still open:** a pass/fail run doesn't give the precision/recall figures the
+  Automatic Exam Pause decision is waiting on (Decision Log, Option C). That needs a
+  counted, logged run.
 
 ## 24. POC #4 — Speaking / Voice Activity Detection
 
@@ -890,9 +952,23 @@ mic, extended-run drift.
 
 ### POC #4 Results
 
-*(Pending — same as POC #1–3, this needs a human to actually run the test matrix in
-[poc-04-speaking-vad/README.md](poc-04-speaking-vad/README.md) with a real
-microphone. Drop the synthesized results here once that's done.)*
+**Manual run, 2026-10-27** (Chrome on macOS), pass/fail per row of the test matrix in
+[poc-04-speaking-vad/README.md](poc-04-speaking-vad/README.md):
+
+- All 12 scenarios passed, with no false positives observed:
+  - Silence logged nothing.
+  - Normal speech, reading aloud and quiet mumbling were detected.
+  - Typing, music/TV and fan hum, with no speech, logged nothing.
+  - A cough or sneeze was discarded.
+  - 10 s of speech logged one segment, and a 1 s mid-sentence pause didn't split it.
+  - A second person talking and speech from further away were detected.
+  - A 10+ min run showed no degradation.
+- **Behaviour vs settings:** the tester reports it matched the defaults. Speech must
+  last 400 ms to be logged, and a pause has to exceed 1.4 s to end a segment. Not
+  written down: segment durations, speech probabilities, discarded-sound counts and
+  CPU.
+- **Still open:** VAD detects *that* someone is speaking, not *what*. It can't tell
+  reading a question aloud from other speech (Section 10).
 
 ## 25. POC #6 — Real-Time Events → Proctor Dashboard
 
@@ -977,11 +1053,30 @@ database, no auth, no evidence capture.
 
 ### POC #6 Results
 
-*(Pending — this needs a human to actually open two browser tabs and run the test
-matrix in [poc-06-realtime-alerts/README.md](poc-06-realtime-alerts/README.md),
-particularly the multi-tab sync and reconnect rows, which the `curl`-based
-verification above couldn't exercise. Drop the synthesized results here once that's
-done.)*
+**Automated run, 2026-10-27** (headless Chrome 155 on macOS driving the real
+`candidate.html` and two `dashboard.html` tabs through the DevTools protocol; row
+details in [poc-06-realtime-alerts/README.md](poc-06-realtime-alerts/README.md)):
+
+- **11 of 12 rows pass, 1 partly.**
+  - Delivery took 1–2 ms candidate→server. The card was visible in the dashboard
+    ≤29 ms after the click.
+  - All three review lifecycles work, and Confirm-before-Acknowledge returns 409.
+  - Two dashboard tabs stay in sync, including reviews made in the other tab. Seven
+    rapid-fire events arrived in both tabs with none lost.
+  - A refreshed tab recovers the backlog with identical statuses. A reopened candidate
+    tab can still send.
+- **10.5-minute run:** 42 events sent, 42 received in each tab. Max delivery was 8 ms,
+  the connection never dropped, and JS heap grew 0.7 → 1.3 MB with 42 cards rendered.
+- **Bug (restart row, partly):** the dashboard reconnects about 2.2 s after
+  `server.js` restarts, but an open tab keeps its pre-restart cards. The `backlog`
+  handler adds to the tab's map and never clears it. Since the server restarts ids
+  at #1, new alerts silently overwrite stale cards with the same id, and the alert
+  count doesn't grow. In production, ids come from the database, so this specific
+  collision goes away. The lesson still applies: a reconnect must replace client
+  state, not merge into it.
+- **Security note for production:** `dashboard.js` builds cards with `innerHTML` from
+  candidate-supplied `event_type` and `detail`. That is an HTML/script-injection path
+  into the proctor's browser, so production must escape or use `textContent`.
 
 ## 26. POC #7 — Evidence Rolling-Buffer Recording
 
@@ -1097,9 +1192,36 @@ segments, 2.45MB). Two bugs were found and addressed during this pass — see
 "Implementation notes" above (unplayable clips from header eviction — fixed and
 confirmed; "0:00" duration display — cosmetic only, playback unaffected).
 
-*(Still pending: the rest of the test matrix — pre-roll/post-roll timing precision,
-decoy/edge-case scenarios, extended-run behavior. Drop those results here once
-that's done — and clear your local `clips/` folder once you're done testing.)*
+**Automated run, 2026-10-27** (headless Chrome 155, fake camera, driving the real
+page through the DevTools protocol; row details in
+[poc-07-evidence-capture/README.md](poc-07-evidence-capture/README.md)):
+
+- **7 of the 9 open rows pass and 2 pass only partly. The playback row was already
+  confirmed on 2026-09-23.** Passing:
+  - A trigger right after "ready" gives a clip centred on the trigger, about 8.5 s of
+    media across 9 segments.
+  - An early trigger saves a shorter clip without error.
+  - A second trigger during a capture is ignored.
+  - New pre/post-roll settings take effect.
+  - Several clips in a row all list and play.
+  - A 10.5-minute run held at most 4 segments, with JS heap 0.8 → 0.9 MB, and a clip
+    taken at the end was still fine.
+- **Timing precision:** clips come out up to about 1 s short on each side. Pre-roll
+  was 4.1–5.0 s for 5 s, and 3/8 s settings gave 2.0/7.0 s. Only whole 1 s segments
+  are kept, and the last one isn't stored yet when the capture closes.
+- **Bug: saved trigger time is wrong.** `app.js` sends `new Date()` at upload, so the
+  stored `trigger_time` is about the post-roll (5 s) *after* the real trigger. For
+  evidence, the stored timestamp must be the trigger time.
+- **Bug: first segment after camera start can't be decoded**
+  (`DEMUXER_ERROR_COULD_NOT_OPEN`). This happened in two separate runs, so an early
+  clip loses its first ~1 s. It needs re-checking with a real webcam.
+- **Bug: a restart overwrites evidence.** Clip ids restart at 1 when `server.js`
+  restarts, and files are named `clip-<id>-part<n>.webm`. The first clip after a
+  restart overwrote 6 existing files. "Clear all" also leaves pre-restart files on
+  disk, 52 in the test, because it only knows the current process's list. Production
+  needs unique, persistent ids (DB/S3 keys).
+- **Not measured:** dropped frames, and a real webcam (timing was measured with
+  Chrome's fake camera).
 
 ## 27. POC #5 — Screen Capture / Live Proctor Viewing
 
@@ -1354,14 +1476,34 @@ with real capture.
 | Criterion | Status |
 |---|---|
 | Candidate can share entire screen; proctor sees it live | ✅ automated (fake monitor source); ✅ manual, Chrome on macOS, 2026-10-02 |
-| Wrong surface (window/tab) rejected | ⏳ implemented, needs real picker (manual) |
+| Wrong surface (window/tab) rejected | ✅ manual, Chrome on macOS, 2026-10-27 (real picker) |
 | Proctor notified immediately when sharing stops | ✅ 16–35 ms |
 | Low latency | ✅ ~25 ms glass-to-glass on localhost for static content; real-network figure pending |
 | Modest bandwidth | ✅ ~100–200 kbps for exam text at 1080p |
 | Proctor can read exam text | ✅ at Low and Balanced |
 | Multi-monitor detection | ⏳ implemented, needs a real second monitor (manual) |
 | Survives signaling outage | ✅ (after fix) |
-| Works across browsers / macOS permission flow / real networks | ⏳ manual matrix |
+| Works across browsers / macOS permission flow / real networks | ⚠️ partly. Firefox, Safari and the macOS permission flow worked (manual, 2026-10-27). Edge on Windows and real networks not tested |
+
+**Manual run, 2026-10-27** (macOS, row details in
+[poc-05-screen-capture/README.md](poc-05-screen-capture/README.md)). The tester
+reported every row they ran as working:
+- in Chrome: window and tab picks rejected with `WRONG_SURFACE`, "Stop sharing"
+  reaching the proctor, the Screen Recording permission off → grant → relaunch flow,
+  readable exam text at Low/Balanced/High, the latency probe, scroll/video, a screen
+  lock, and a 30+ minute share without freezing
+- sharing also worked in Firefox and Safari
+
+**Not recorded:**
+- glass-to-glass latency, bitrate and fps, so the automated 2026-09-23 figures above
+  are still the only measurements
+- whether Firefox/Safari report `displaySurface`, and whether Safari allows a window
+  pick, which matters because the "entire screen" enforcement relies on it
+- what the proctor sees on screen lock
+- whether OS notifications were visible to the proctor, which is the privacy check
+
+**Not tested:** Edge on Windows, all four multi-monitor rows and mirrored displays,
+a second machine or network (STUN/TURN), and 5+ candidates.
 
 ## 28. POC #8 — Practice / Onboarding Simulator
 
@@ -1587,7 +1729,7 @@ Run long suites under `caffeinate`.
 | Survives reload mid-flow | `happy_en` reloads at the screen step | **Pass.** It resumes at Screen with device/camera/mic results kept |
 | Report accepted by POC #6 unchanged | `report_into_poc6` | **Pass** (HTTP 201, stored as `READINESS_REPORT`). POC #6 then stores it as `ALERTED`, which F9 addresses |
 | Real-time with face + VAD + phone | `?dev=1` metrics in the happy paths | Face Landmarker **~11 fps, ~50 ms per frame** (GPU delegate). Phone detector ~220 ms per call, one call every ~880–900 ms (the duty cycle, F4). Headless numbers; laptop numbers are in the manual matrix |
-| First-time candidate unaided in < ~5 min | Manual team run, 2026-10-06 (EN, macOS, real camera/mic/screen) | **Partly tested.** Welcome → Summary in ~2–3 min, all six checks passed, no problems. The tester knew the app, so real first-time EN and AR candidates are still needed |
+| First-time candidate unaided in < ~5 min | Team run 2026-10-06 (EN); three first-time people 2026-10-27 (EN, unaided, Chrome) | **Partly met.** Two technical first-time users took 3–4 min and one non-technical user took ~6 min. No hesitations were observed, nobody used Skip, and all three found it easy. The target holds for technical users but not yet for a non-technical one. The sample is small (n=3), and AR is deferred (Decision Log, 2026-10-27) |
 
 **Measured load times** (cold cache per scenario, since each launch is a fresh
 browser profile): face model 0.1–7.9 s, phone model 7.8–15.5 s, VAD 0.3–5.0 s, and
@@ -1666,6 +1808,33 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
   alert queue. Production needs a separate, non-alert event type, or a separate
   endpoint, for "candidate readiness".
 
+**Manual run, 2026-10-27** (the tester's Mac, row details in the
+[README](poc-08-onboarding-simulator/README.md) matrix). The tester reported every
+row they ran as working:
+- directional hints point the right way
+- `TOO_DARK`/`BACKLIT` appear, with no false alarms in normal light
+- glasses on and off
+- in Practice, look-away, phone (a decoy wasn't flagged) and speech-only nudges
+- the real screen picker rejects a window and a tab and accepts the entire screen
+- every step in Firefox and Safari
+- VoiceOver reads steps and statuses sensibly
+- `?lang=ar` was also opened as a quick layout check (not a language review)
+
+**Not recorded:** face FPS on a real laptop. **Not tested:**
+- real first-time EN and AR candidates, and the bilingual review of `content/ar.json`
+- a low-end machine
+- hijab/head covering
+- the macOS Screen Recording permission flow *inside POC #8*
+- a real second monitor, Edge on Windows, NVDA, and a network that blocks jsDelivr
+
+**First-time candidates, 2026-10-27 (EN).** Three people who had never seen the app went through it unaided: two technical and one non-technical.
+- Technical: **3–4 min**. Non-technical: **~6 min**, which misses the < ~5 min target.
+- No hesitations were observed, nobody used *Skip — I need help*, and all three said it was easy.
+- All three used Chrome. Not reported: device and summary results.
+- Reading: the flow is clear, since nobody got stuck, but it is long for a non-technical candidate. Where the extra time went wasn't measured per step. A step-timing run (`?dev=1`, or timestamps in the downloaded report) with more non-technical users would show which steps to shorten.
+
+The "< 5 minutes unaided" criterion is **partly met**: it holds for technical users (n=2) and is missed for a non-technical user (n=1). It is untested in Arabic (deferred).
+
 ### 28.11 Limitations
 
 - All numbers come from headless Chromium with fake devices on one Mac. Real webcams,
@@ -1677,8 +1846,9 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
 - The setup band and lighting thresholds are untuned starting values.
 - The rules are placeholders (D8), and the Arabic copy is machine-drafted (D7). Neither
   may be shown to real candidates as they are.
-- The "< 5 minutes unaided" criterion, the one the POC exists for, is untested until
-  real candidates, including Arabic speakers, use it.
+- The "< 5 minutes unaided" criterion, the one the POC exists for, is only partly met
+  (2026-10-27: 3–4 min for two technical users, ~6 min for one non-technical user).
+  That's n=3, English only, and Arabic is deferred.
 - The report is only downloaded; nothing is wired to a backend.
 
 ### 28.12 Risks and decisions after implementation
@@ -1741,11 +1911,12 @@ the first-inference warm-up ~4.0–4.6 s per vision model.
 | 2026-09-29 | MediaPipe usage telemetry (found in POC #8) | Accept it, pin 0.10.35 (last version without it), CSP `connect-src` allow-list, self-host + CSP | CSP allow-list now, in POC #8. **Production: self-host + CSP**. POC #1–#3 got the same CSP on 2026-10-06 | There's no API opt-out, and the CSP blocks it at the browser level for every library at once. Proven by a 75 s e2e run (Section 28.10, F1) | Proposed — needs compliance input (Open Question #12) |
 | 2026-09-29 | Arabic digits | Browser default, Latin (`nu-latn`), Arabic-Indic (`nu-arab`) | Pinned Latin, configurable in content `meta` | Browser defaults differ by region tag and version. Latin is the likely convention of the exam engine | Proposed — Open Question #10 |
 | 2026-09-29 | Readiness hand-off to the proctor | None, JSON download, POST to backend | JSON download in the POC, same shape as a POC #6 event (accepted unchanged by `POST /events`) | Keeps the POC unwired. Production needs its own non-alert event type (Section 28.10, F9) | Proposed |
+| 2026-10-27 | Arabic-speaker testing of POC #8 | Test with native Arabic speakers now, defer, drop Arabic | Defer. Validate the unaided flow with English first-time candidates first | No Arabic-speaking testers or bilingual reviewer available to the team. Arabic remains machine-drafted, unvalidated and not for real candidates (D7); Andy's Arabic-onboarding concern stays open | Approved for R&D phase |
 
 ## Experiment Log
 
 | POC | Goal | Setup | Result | Metrics | Problems | Decision |
 |---|---|---|---|---|---|---|
-| 1 | Validate face presence / out-of-frame / multiple-face detection on a normal webcam | Standalone browser page, MediaPipe Face Detector (BlazeFace short-range), WASM, no backend | See Section 18 (pending human test run) | Latency/FPS logged live in-app; see README for how to capture | TBD after manual testing | TBD |
+| 1 | Validate face presence / out-of-frame / multiple-face detection on a normal webcam | Standalone browser page, MediaPipe Face Detector (BlazeFace short-range), WASM, no backend | Manual run 2026-10-27: 14/15 scenarios passed, 1 not tested (older webcam), no false positives observed (Section 18) | Not recorded in the manual run; ~11 ms/frame in headless Chrome with a fake camera | Timings not captured; no low-end hardware run | Pass/fail confirmed; measure timings before tuning thresholds |
 | 5 | Validate entire-screen share + live proctor viewing | `getDisplayMedia` + P2P WebRTC, Node SSE signaling; Playwright/headless Chromium with fake monitor device and synthetic 1080p exam screen; localhost | Works end to end; survives signaling outage; events reach proctor in 16–35 ms | Glass-to-glass ~23–34 ms (static), ~67 ms (scroll, High); 100–150 kbps static text @1080p; 4 candidates → 185 kbps proctor download | Reconnect tore down live video (fixed); motion + 1 Mbps cap → 1 fps/450 ms; mesh doubles candidate encode per extra viewer; SSE 6-conn limit; N≥6 load not measurable on one machine | P2P + TURN for production; SFU only on trigger; manual matrix next |
 | 8 | Validate an unaided EN/AR practice + setup check that reuses POC #1–#6 | Static page; MediaPipe 1.0.1 (pinned) Face Landmarker + Object Detector, Silero VAD 0.0.31, getDisplayMedia; content JSON; Playwright/headless Chromium with Xiph face videos, TTS speech (EN + AR), fake screen, stubbed failures | 29/29 unit tests; 18/18 e2e scenarios (EN + AR happy paths, 11 failure modes, practice alerts, network/telemetry, POC #6 hand-off) | Face ~11 fps / ~50 ms; phone ~220 ms at ~1.1 Hz; warm-up ~4–4.6 s per model; happy path 62–69 s with fake devices (Section 28.10) | MediaPipe telemetry (F1); concurrent task creation hang (F2, fixed); main-thread starvation (F3–F4, mitigated); Landmarker undercounts a second face (F6); VAD start-up timing (F7) | Hybrid deterministic approach confirmed; CSP allow-list required; real-candidate test next |

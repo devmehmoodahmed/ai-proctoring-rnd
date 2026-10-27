@@ -125,31 +125,33 @@ it for real testing.
 
 ## Test matrix (manual, fill in while testing, then summarize into `R&D.md`)
 
+**Manual run, 2026-10-27** (macOS; Chrome unless the row names another browser): the tester reported every row they ran as working. Figures (latency, bitrate, FPS) were not recorded; rows needing hardware or people we didn't have are *Not tested*.
+
 | Scenario | Worked as expected? | Notes |
 |---|---|---|
 | Chrome (macOS): share entire screen, proctor sees it; note connect time | Yes | 2026-10-02, team run: surface `monitor`, 3456×2234, one monitor detected; proctor page showed it live. Connect time not noted |
-| Chrome: pick a **window**, should be rejected with `WRONG_SURFACE` | | |
-| Chrome: pick a **tab**, should be rejected with `WRONG_SURFACE` | | |
-| Chrome: stop via the browser's "Stop sharing" bar; proctor notified | | |
-| macOS: first run with Screen Recording permission **off**: what does the candidate see? | | |
-| macOS: grant permission, relaunch the browser, share again | | |
-| Edge (Windows): share entire screen | | |
-| Firefox: share entire screen; does it report `displaySurface`? | | |
-| Safari (macOS): share; is `displaySurface` reported? Can a window be picked? | | |
-| **Two monitors connected**: does `MULTIPLE_MONITORS` fire at share start? | | |
-| Two monitors: "Detect monitors" (permission prompt): count + which screen is shared | | |
-| Plug in / unplug a second monitor mid-share: `MONITOR_CONFIG_CHANGED`? | | |
-| Unplug the monitor that is being shared | | |
-| Mirrored displays (not extended): reported as single? (expected: yes, a known blind spot) | | |
-| Latency probe on, candidate window visible: glass-to-glass per profile | | |
-| Low / Balanced / High: can the proctor read exam text full screen? | | |
-| Candidate scrolls a long page / plays a video: bitrate, fps, latency | | |
-| Candidate on a second machine (same Wi-Fi): works without STUN? latency? | | |
-| Candidate on a different network (e.g. phone hotspot) with `?stun=1` | | |
-| 5+ candidates on separate machines → 1 proctor: proctor CPU and download | | |
-| Lock the screen / sleep the laptop mid-share | | |
-| Notifications / other apps visible to the proctor? (privacy check) | | |
-| Leave sharing for 30+ min: drift, memory growth, freezes? | | |
+| Chrome: pick a **window**, should be rejected with `WRONG_SURFACE` | ✅ Yes | Rejected with `WRONG_SURFACE` |
+| Chrome: pick a **tab**, should be rejected with `WRONG_SURFACE` | ✅ Yes | Rejected with `WRONG_SURFACE` |
+| Chrome: stop via the browser's "Stop sharing" bar; proctor notified | ✅ Yes | Proctor notified |
+| macOS: first run with Screen Recording permission **off**: what does the candidate see? | ✅ Worked | What the candidate saw: not recorded |
+| macOS: grant permission, relaunch the browser, share again | ✅ Yes |  |
+| Edge (Windows): share entire screen | Not tested |  |
+| Firefox: share entire screen; does it report `displaySurface`? | ✅ Worked | Whether `displaySurface` was reported: not recorded |
+| Safari (macOS): share; is `displaySurface` reported? Can a window be picked? | ✅ Worked | Whether `displaySurface` was reported, and whether a window could be picked: not recorded |
+| **Two monitors connected**: does `MULTIPLE_MONITORS` fire at share start? | Not tested |  |
+| Two monitors: "Detect monitors" (permission prompt): count + which screen is shared | Not tested |  |
+| Plug in / unplug a second monitor mid-share: `MONITOR_CONFIG_CHANGED`? | Not tested |  |
+| Unplug the monitor that is being shared | Not tested |  |
+| Mirrored displays (not extended): reported as single? (expected: yes, a known blind spot) | Not tested |  |
+| Latency probe on, candidate window visible: glass-to-glass per profile | ✅ Worked | Tester: measured close to the automated 2026-09-23 figures (~23–34 ms glass-to-glass for static content; ~67 ms scrolling at High). Per-profile values not written down |
+| Low / Balanced / High: can the proctor read exam text full screen? | ✅ Yes | Exam text readable |
+| Candidate scrolls a long page / plays a video: bitrate, fps, latency | ✅ Worked | Tester: measured close to the automated 2026-09-23 figures (~100–150 kbps for static 1080p text; motion raises bitrate and lowers fps). Exact values not written down |
+| Candidate on a second machine (same Wi-Fi): works without STUN? latency? | Not tested |  |
+| Candidate on a different network (e.g. phone hotspot) with `?stun=1` | Not tested |  |
+| 5+ candidates on separate machines → 1 proctor: proctor CPU and download | Not tested |  |
+| Lock the screen / sleep the laptop mid-share | ✅ Worked | What the proctor saw: not recorded |
+| Notifications / other apps visible to the proctor? (privacy check) | Checked | Whether notifications were visible to the proctor: not recorded |
+| Leave sharing for 30+ min: drift, memory growth, freezes? | ✅ Yes | No freezing or slowdown observed; memory not recorded |
 
 ## Known limitations of this POC
 

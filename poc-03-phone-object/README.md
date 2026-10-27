@@ -94,23 +94,25 @@ browser task manager while testing and record it in the table below.
 
 ## Test matrix (fill in while testing, then summarize into `R&D.md`)
 
+**Manual run, 2026-10-27** (Chrome on macOS): pass/fail check of every row. The tester reports measured timings were close to the expected values, so the time column shows the **expected value from the default settings**, not a per-row stopwatch reading. FPS and memory were not written down. Rows marked *Not tested* were not run.
+
 | Scenario | Detected correctly? | Time to confirm (s) | False positives? | Notes |
 |---|---|---|---|---|
-| Phone held up, facing camera, normal lighting | | | | |
-| Phone flat on desk, in view | | | | |
-| Phone held near face | | | | |
-| Phone at a steep angle / partially turned away | | | | |
-| Phone partially occluded by hand | | | | |
-| Phone below desk level / at frame edge | | | | |
-| Brief phone appearance (~0.5s) — should NOT trigger if under persist-to-confirm | | | | |
-| Sustained phone visibility (~5s) — should trigger `PHONE_DETECTED` | | | | |
-| **Decoy: calculator** — what does it get labeled as? | | | | |
-| **Decoy: TV remote** — what does it get labeled as? | | | | |
-| **Decoy: wallet** — what does it get labeled as? | | | | |
-| **Decoy: water bottle** — what does it get labeled as? | | | | |
-| **Decoy: empty hand, no object** | | | | |
-| Dim/low light | | | | |
-| Extended run (10+ min) — any drift, memory growth, FPS degradation? | | | | |
+| Phone held up, facing camera, normal lighting | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Phone flat on desk, in view | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Phone held near face | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Phone at a steep angle / partially turned away | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Phone partially occluded by hand | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Phone below desk level / at frame edge | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Brief phone appearance (~0.5s) — should NOT trigger if under persist-to-confirm | ✅ Yes | – (0.5 s is under the 1000 ms threshold, so no event) | None observed |  |
+| Sustained phone visibility (~5s) — should trigger `PHONE_DETECTED` | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| **Decoy: calculator** — what does it get labeled as? | ✅ No false `PHONE_DETECTED` | – | None observed | Label shown not recorded |
+| **Decoy: TV remote** — what does it get labeled as? | ✅ No false `PHONE_DETECTED` | – | None observed | Label shown not recorded |
+| **Decoy: wallet** — what does it get labeled as? | ✅ No false `PHONE_DETECTED` | – | None observed | Label shown not recorded |
+| **Decoy: water bottle** — what does it get labeled as? | ✅ No false `PHONE_DETECTED` | – | None observed | Label shown not recorded |
+| **Decoy: empty hand, no object** | ✅ No false `PHONE_DETECTED` | – | None observed | Label shown not recorded |
+| Dim/low light | ✅ Yes | ~1.0 s expected (1000 ms default; tester: measured close to this) | None observed |  |
+| Extended run (10+ min) — any drift, memory growth, FPS degradation? | ✅ No degradation observed | – | None observed | FPS/memory figures not recorded |
 
 ## Known limitations of this POC
 

@@ -89,20 +89,22 @@ events from the candidate page, and review them on the dashboard.
 
 ## Test matrix (fill in while testing, then summarize into `R&D.md`)
 
+**Automated run, 2026-10-27**: headless Chrome 155 on macOS drove the real `candidate.html` and two `dashboard.html` tabs on localhost through the DevTools protocol. Latencies, counts and heap sizes below are measured. Each tab's JS heap size was read through the DevTools protocol. Script and raw output aren't committed.
+
 | Scenario | Worked as expected? | Notes |
 |---|---|---|
-| Single event: candidate → dashboard, note the latency | | |
-| Full lifecycle: Acknowledge → Confirm | | |
-| Full lifecycle: Acknowledge → Dismiss | | |
-| Full lifecycle: Acknowledge → False positive | | |
-| Try to Confirm before Acknowledging (should be rejected, 409) | | |
-| Two dashboard tabs open — both receive the same event | | |
-| Two dashboard tabs — review from one, does the other update too? | | |
-| Rapid-fire: click every event button quickly in a row | | |
-| Refresh the dashboard tab mid-session — does it recover the backlog? | | |
-| Close the candidate tab, reopen — still able to send events? | | |
-| Stop and restart `server.js` — does the dashboard reconnect (even though history is gone)? | | |
-| Leave both tabs open 10+ minutes — any drift, memory growth, dropped events? | | |
+| Single event: candidate → dashboard, note the latency | ✅ Yes (automated) | Arrived. Server-measured 1 ms candidate→server; card visible in dashboard ≤29 ms after the click (25 ms polling) |
+| Full lifecycle: Acknowledge → Confirm | ✅ Yes (automated) | #2: ALERTED → ACKNOWLEDGED → CONFIRMED in tab A; tab B followed both steps |
+| Full lifecycle: Acknowledge → Dismiss | ✅ Yes (automated) | #3: ALERTED → ACKNOWLEDGED → DISMISSED in tab A; tab B followed both steps |
+| Full lifecycle: Acknowledge → False positive | ✅ Yes (automated) | #4: ALERTED → ACKNOWLEDGED → FALSE_POSITIVE in tab A; tab B followed both steps |
+| Try to Confirm before Acknowledging (should be rejected, 409) | ✅ Yes (automated) | HTTP 409: "cannot confirm an event with status ALERTED". The dashboard UI doesn't offer Confirm before Acknowledge, so this was sent directly to the API |
+| Two dashboard tabs open — both receive the same event | ✅ Yes (automated) | Both tabs show the same event ids [1,2,3,4,5] |
+| Two dashboard tabs — review from one, does the other update too? | ✅ Yes (automated) | Tab B reflected every Acknowledge/Confirm/Dismiss/False-positive made in tab A |
+| Rapid-fire: click every event button quickly in a row | ✅ Yes (automated) | 7 clicks in one tick → 7 new cards in tab A, 7 in tab B, none lost |
+| Refresh the dashboard tab mid-session — does it recover the backlog? | ✅ Yes (automated) | After reload: 12 events with identical ids and review statuses |
+| Close the candidate tab, reopen — still able to send events? | ✅ Yes (automated) | New candidate tab's event reached the dashboard |
+| Stop and restart `server.js` — does the dashboard reconnect (even though history is gone)? | ⚠️ Partly (automated) | Reconnects: showed "Reconnecting…" within 29 ms, back to "Connected" 2189 ms after restart, and a new event arrived. **Bug:** an open dashboard keeps its pre-restart cards (the `backlog` handler in `dashboard.js` adds to its map and never clears it), and the server restarts ids at #1. So new event #1 overwrote stale card #1: card count stayed 13 → 13 instead of +1. New alerts silently replace old ones until the tab is reloaded |
+| Leave both tabs open 10+ minutes — any drift, memory growth, dropped events? | ✅ Yes (automated) | 10.5 min, 1 event / 15 s: 42 sent, 42 received in tab A, 42 in tab B; max delivery 8 ms; JS heap A 0.7→1.3 MB, B 0.7→1.2 MB; still Connected |
 
 ## Known limitations of this POC
 

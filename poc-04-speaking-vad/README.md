@@ -86,20 +86,22 @@ browser task manager while testing and record it in the table below.
 
 ## Test matrix (fill in while testing, then summarize into `R&D.md`)
 
+**Manual run, 2026-10-27** (Chrome on macOS): pass/fail check of every row. The tester reports measured timings were close to the expected values, so the time column shows the **expected value from the default settings**, not a per-row stopwatch reading. FPS and memory were not written down. Rows marked *Not tested* were not run.
+
 | Scenario | Detected correctly? | False positives? | Notes |
 |---|---|---|---|
-| Silence, quiet room | | | |
-| Normal speaking / reading aloud | | | |
-| Quiet mumbling | | | |
-| Background noise, no speech (typing) | | | |
-| Background noise, no speech (music/TV) | | | |
-| Background noise, no speech (HVAC/fan hum) | | | |
-| Brief cough or sneeze — should be discarded, not logged | | | |
-| Sustained speech (~10s) — should log one segment | | | |
-| Mid-sentence pause (~1s) — should NOT split into two segments | | | |
-| Second person talking in the room | | | |
-| Speaking from further away from the mic | | | |
-| Extended run (10+ min) — any drift, memory growth, CPU creep? | | | |
+| Silence, quiet room | ✅ Yes | None observed |  |
+| Normal speaking / reading aloud | ✅ Yes | None observed | Segments start above 0.50 speech probability and end below 0.35 (tester: measured close to this) |
+| Quiet mumbling | ✅ Yes | None observed |  |
+| Background noise, no speech (typing) | ✅ Yes | None observed |  |
+| Background noise, no speech (music/TV) | ✅ Yes | None observed |  |
+| Background noise, no speech (HVAC/fan hum) | ✅ Yes | None observed |  |
+| Brief cough or sneeze — should be discarded, not logged | ✅ Yes | None observed | Under the 400 ms minimum speech length, so discarded (tester: measured close to this) |
+| Sustained speech (~10s) — should log one segment | ✅ Yes | None observed | One segment of ~10 s expected (tester: measured close to this) |
+| Mid-sentence pause (~1s) — should NOT split into two segments | ✅ Yes | None observed | A 1 s pause is under the 1400 ms grace period, so no split (tester: measured close to this) |
+| Second person talking in the room | ✅ Yes | None observed |  |
+| Speaking from further away from the mic | ✅ Yes | None observed |  |
+| Extended run (10+ min) — any drift, memory growth, CPU creep? | ✅ No degradation observed | None observed | FPS/memory figures not recorded |
 
 ## Known limitations of this POC
 

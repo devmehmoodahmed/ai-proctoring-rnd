@@ -109,26 +109,28 @@ browser task manager while testing and record it in the table below.
 
 ## Test matrix (fill in while testing, then summarize into `R&D.md` Section 18-equivalent for POC #2)
 
+**Manual run, 2026-10-27** (Chrome on macOS): pass/fail check of every row. The tester reports measured timings were close to the expected values, so the time column shows the **expected value from the default settings**, not a per-row stopwatch reading. FPS and memory were not written down. Rows marked *Not tested* were not run.
+
 | Scenario | Detected correctly? | Time to confirm (s) | False positives? | Notes |
 |---|---|---|---|---|
-| Straight ahead, calibrated, normal lighting | | | | |
-| Look at a second monitor to the left | | | | |
-| Look at a second monitor to the right | | | | |
-| Look down at notes on the desk | | | | |
-| Look up | | | | |
-| Extreme yaw (near-profile turn) | | | | |
-| Brief glance away (~0.5s) — should NOT trigger if under persist-to-confirm | | | | |
-| Sustained look-away (~5s) — should trigger `LOOKING_AWAY` | | | | |
-| Natural reading/typing posture drift — should NOT false-positive | | | | |
-| Glasses on | | | | |
-| Glasses off (if applicable) | | | | |
-| Hijab / head covering | | | | |
-| Poor/dim lighting | | | | |
-| Low-quality/older webcam, if available | | | | |
-| Laptop lid tilted down/up (camera angle) | | | | |
-| Uncalibrated vs. calibrated — same head turn, compare false-positive rate | | | | |
-| Pose axis visualization — do red/green/blue lines move in the expected direction when you turn/nod/tilt? | | | | |
-| Extended run (10+ min) — any drift, memory growth, FPS degradation? | | | | |
+| Straight ahead, calibrated, normal lighting | ✅ Yes | – (no event expected) | None observed |  |
+| Look at a second monitor to the left | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed | Head turn in that direction; physical second monitor not confirmed |
+| Look at a second monitor to the right | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed | Head turn in that direction; physical second monitor not confirmed |
+| Look down at notes on the desk | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Look up | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Extreme yaw (near-profile turn) | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Brief glance away (~0.5s) — should NOT trigger if under persist-to-confirm | ✅ Yes | – (0.5 s is under the 1200 ms threshold, so no event) | None observed |  |
+| Sustained look-away (~5s) — should trigger `LOOKING_AWAY` | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Natural reading/typing posture drift — should NOT false-positive | ✅ Yes | – (no event expected) | None observed |  |
+| Glasses on | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Glasses off (if applicable) | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Hijab / head covering | Not tested | – | – |  |
+| Poor/dim lighting | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Low-quality/older webcam, if available | Not tested | – | – |  |
+| Laptop lid tilted down/up (camera angle) | ✅ Yes | ~1.2 s expected (1200 ms default; tester: measured close to this) | None observed |  |
+| Uncalibrated vs. calibrated — same head turn, compare false-positive rate | ✅ Yes | – | None observed | False-positive rates not recorded |
+| Pose axis visualization — do red/green/blue lines move in the expected direction when you turn/nod/tilt? | ✅ Yes | – (visual check, no timing) | None observed |  |
+| Extended run (10+ min) — any drift, memory growth, FPS degradation? | ✅ No degradation observed | – | None observed | FPS/memory figures not recorded |
 
 ## Known limitations of this POC
 

@@ -89,23 +89,25 @@ Run through each row with the app open, and log what you observed. "Detected
 correctly?" should reference the live status line and the event log, not just
 eyeballing the video.
 
+**Manual run, 2026-10-27** (Chrome on macOS): pass/fail check of every row. The tester reports measured timings were close to the expected values, so the time column shows the **expected value from the default settings**, not a per-row stopwatch reading. FPS and memory were not written down. Rows marked *Not tested* were not run.
+
 | Scenario | Detected correctly? | Time to confirm (s) | False positives? | Notes |
 |---|---|---|---|---|
-| Normal lighting, ~50cm from camera | | | | |
-| Dim/low light | | | | |
-| Backlit (window/light behind candidate) | | | | |
-| Very close to camera (~20cm) | | | | |
-| Far from camera (~1.5m+) — should trigger `TOO_FAR` | | | | |
-| Move slowly out of frame to the left | | | | |
-| Move slowly out of frame to the right | | | | |
-| Move slowly out of frame downward | | | | |
-| Quick full exit from frame — should trigger `FACE_MISSING` | | | | |
-| Brief hand-over-face (~1s) — should NOT trigger an event if under persist-to-confirm | | | | |
-| Sustained face obstruction (~5s) — should trigger `FACE_MISSING` | | | | |
-| Second person enters frame — should trigger `MULTIPLE_FACES` | | | | |
-| Camera angle: laptop lid tilted down/up | | | | |
-| Low-quality/older webcam, if available | | | | |
-| Extended run (10+ min) — any drift, memory growth, FPS degradation? | | | | |
+| Normal lighting, ~50cm from camera | ✅ Yes | – (no event expected) | None observed |  |
+| Dim/low light | ✅ Yes | – (no event expected) | None observed |  |
+| Backlit (window/light behind candidate) | ✅ Yes | – (no event expected) | None observed |  |
+| Very close to camera (~20cm) | ✅ Yes | – (no event expected) | None observed |  |
+| Far from camera (~1.5m+) — should trigger `TOO_FAR` | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Move slowly out of frame to the left | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Move slowly out of frame to the right | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Move slowly out of frame downward | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Quick full exit from frame — should trigger `FACE_MISSING` | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Brief hand-over-face (~1s) — should NOT trigger an event if under persist-to-confirm | ✅ Yes | – (1 s is under the 1500 ms threshold, so no event) | None observed |  |
+| Sustained face obstruction (~5s) — should trigger `FACE_MISSING` | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Second person enters frame — should trigger `MULTIPLE_FACES` | ✅ Yes | ~1.5 s expected (1500 ms default; tester: measured close to this) | None observed |  |
+| Camera angle: laptop lid tilted down/up | ✅ Yes | – (no event expected) | None observed |  |
+| Low-quality/older webcam, if available | Not tested | – | – |  |
+| Extended run (10+ min) — any drift, memory growth, FPS degradation? | ✅ No degradation observed | – | None observed | FPS/memory figures not recorded |
 
 ## Known limitations of this POC
 
